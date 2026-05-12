@@ -67,10 +67,9 @@ export class NhanhService {
         messages?: Record<string, string>;
         data?: { accessToken: string; businessId?: string | number };
       }>(
-        `${NHANH_BASE_URL}/app/getaccesstoken`,
-        { accessCode, secretKey },
+        `https://nhanh.vn/api/app/getaccesstoken`,
+        { appId, accessCode, secretKey }, // Đưa appId vào đây
         {
-          params: { appId },
           headers: { 'Content-Type': 'application/json' },
         },
       );
