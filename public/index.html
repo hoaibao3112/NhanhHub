@@ -265,8 +265,21 @@
 
                 if (res.ok) {
                     msg.style.color = 'var(--success)';
-                    msg.innerText = 'Đăng ký thành công! Đang chuyển sang Đăng nhập...';
-                    setTimeout(showLogin, 1500); // Tự động chuyển sang Login
+                    msg.innerText = '✨ Đăng ký thành công! Đang vào hệ thống...';
+
+                    // Tự động gọi Đăng nhập ngay lập tức
+                    const loginRes = await fetch('/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const loginData = await loginRes.json();
+
+                    if (loginData.access_token) {
+                        localStorage.setItem('access_token', loginData.access_token);
+                        localStorage.setItem('user_email', email);
+                        setTimeout(() => location.reload(), 1000);
+                    }
                 } else {
                     msg.style.color = 'var(--danger)';
                     msg.innerText = data.message || 'Email đã tồn tại!';
