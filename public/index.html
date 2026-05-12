@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NhanhHub Dashboard | Anh Hùng Đẹp Trai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0c83ff;
+            --success: #059669;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .dashboard {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .status-disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .status-connected {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
+
+        .info-item span:last-child {
+            color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            outline: none;
+            margin-bottom: 12px;
+        }
+
+        .btn-connect {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(12, 131, 255, 0.3);
+        }
+
+        .btn-connect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(12, 131, 255, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn-disconnect {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+
+        .btn-disconnect:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <h1>NhanhHub</h1>
+    <p style="color: #64748b; margin-bottom: 24px;">Chào anh Hưng! Hệ thống quản lý tài khoản Nhanh.vn</p>
+
+    <div id="statusBadge" class="status-badge status-disconnected">
+        Đang tải trạng thái...
+    </div>
+
+    <div id="infoBox" class="info-box">
+        <div class="info-item"><span>Business ID:</span> <span id="valBusinessId">-</span></div>
+        <div class="info-item"><span>Liên kết lúc:</span> <span id="valLinkedAt">-</span></div>
+    </div>
+
+    <button id="btnConnect" class="btn btn-connect">Kết nối Nhanh.vn</button>
+    <button id="btnDisconnect" class="btn btn-disconnect">Hủy liên kết tài khoản</button>
+    
+    <div id="loader" class="loader"></div>
+    <p id="msg" style="font-size: 0.8rem; margin-top: 15px; color: #64748b;"></p>
+</div>
+
+<script>
+    const statusBadge = document.getElementById('statusBadge');
+    const infoBox = document.getElementById('infoBox');
+    const btnConnect = document.getElementById('btnConnect');
+    const btnDisconnect = document.getElementById('btnDisconnect');
+    const loader = document.getElementById('loader');
+    const msg = document.getElementById('msg');
+
+    // Key bảo mật (Trong thực tế nên dùng Login JWT, đây là bản test dùng API Key anh đã đặt)
+    const API_KEY = 'anhhungdeptrai';
+
+    async function checkStatus() {
+        try {
+            const res = await fetch('/nhanh/status');
+            const data = await res.json();
+
+            if (data.linked) {
+                statusBadge.innerText = '● Đã liên kết';
+                statusBadge.className = 'status-badge status-connected';
+                infoBox.style.display = 'block';
+                btnDisconnect.style.display = 'block';
+                btnConnect.style.display = 'none';
+                document.getElementById('valBusinessId').innerText = data.businessId;
+                document.getElementById('valLinkedAt').innerText = new Date(data.linkedAt).toLocaleString('vi-VN');
+            } else {
+                statusBadge.innerText = '○ Chưa liên kết';
+                statusBadge.className = 'status-badge status-disconnected';
+                infoBox.style.display = 'none';
+                btnDisconnect.style.display = 'none';
+                btnConnect.style.display = 'block';
+            }
+        } catch (e) {
+            msg.innerText = 'Lỗi kết nối Server!';
+        }
+    }
+
+    btnConnect.onclick = () => {
+        window.location.href = '/nhanh/connect';
+    };
+
+    btnDisconnect.onclick = async () => {
+        if (!confirm('Anh Hưng chắc chắn muốn hủy liên kết không?')) return;
+        
+        loader.style.display = 'block';
+        btnDisconnect.disabled = true;
+
+        try {
+            // Lưu ý: Lệnh Disconnect yêu cầu mã bảo mật x-api-key
+            const res = await fetch('/nhanh/disconnect', {
+                method: 'DELETE',
+                headers: { 'x-api-key': API_KEY }
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                msg.innerText = 'Đã hủy liên kết thành công!';
+                setTimeout(() => { location.reload(); }, 1500);
+            } else {
+                msg.innerText = data.message || 'Lỗi không xác định';
+            }
+        } catch (e) {
+            msg.innerText = 'Lỗi khi gọi API!';
+        } finally {
+            loader.style.display = 'none';
+            btnDisconnect.disabled = false;
+        }
+    };
+
+    // Tự động kiểm tra trạng thái khi vừa vào trang
+    checkStatus();
+</script>
+
+</body>
+</html>

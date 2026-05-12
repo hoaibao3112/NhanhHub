@@ -14,6 +14,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { NhanhService } from './nhanh.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NhanhAuthGuard } from './nhanh-auth.guard';
 
 @Controller('nhanh')
@@ -48,6 +49,7 @@ export class NhanhController {
    * persists it to `nhanh_token.json`.
    */
   @Get('callback')
+  @Redirect('/')
   async callback(@Query('accessCode') accessCode: string) {
     if (!accessCode) {
       throw new BadRequestException('Missing required query parameter: accessCode');
@@ -58,10 +60,8 @@ export class NhanhController {
     const tokenData = await this.nhanhService.exchangeAccessCode(accessCode);
 
     return {
-      success: true,
-      message: 'Nhanh.vn account linked successfully.',
-      linkedAt: tokenData.linkedAt,
-      businessId: tokenData.businessId,
+      url: '/',
+      statusCode: HttpStatus.FOUND,
     };
   }
 
@@ -142,7 +142,7 @@ export class NhanhController {
    * Accepts a single product object or an array of products.
    */
   @Post('products')
-  @UseGuards(NhanhAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async createProduct(@Body() productData: any) {
     this.logger.log('Creating new product(s) via POST /nhanh/products');
     return await this.nhanhService.createProduct(productData);
@@ -156,7 +156,7 @@ export class NhanhController {
    * Expects a JSON body containing order details (shippingAddress, products, etc.)
    */
   @Post('orders')
-  @UseGuards(NhanhAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async createOrder(@Body() orderData: any) {
     this.logger.log('Creating a new order via POST /nhanh/orders');
     return await this.nhanhService.createOrder(orderData);
