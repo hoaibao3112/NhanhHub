@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NhanhHub Dashboard | Anh Hùng Đẹp Trai</title>
+    <title>NhanhHub</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -33,23 +34,36 @@
             border-radius: 24px;
             padding: 40px;
             width: 100%;
-            max-width: 450px;
+            max-width: 400px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             text-align: center;
             animation: fadeIn 0.8s ease-out;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 2.2rem;
+            margin-bottom: 8px;
             background: linear-gradient(to right, #60a5fa, #3b82f6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
         }
 
         .form-group {
@@ -59,20 +73,26 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             font-size: 0.85rem;
             color: #94a3b8;
         }
 
         input {
             width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(0,0,0,0.2);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
             color: white;
             box-sizing: border-box;
             outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(12, 131, 255, 0.1);
         }
 
         .btn {
@@ -85,12 +105,31 @@
             cursor: pointer;
             transition: all 0.3s;
             border: none;
-            margin-bottom: 12px;
+            margin-top: 10px;
         }
 
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-secondary { background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); }
-        .btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-link {
+            background: none;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-top: 20px;
+        }
+
+        .btn-link span {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
 
         .status-badge {
             display: inline-flex;
@@ -98,145 +137,227 @@
             border-radius: 100px;
             font-weight: 600;
             font-size: 0.875rem;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
-        .status-connected { background: rgba(5, 150, 105, 0.1); color: var(--success); border: 1px solid rgba(5, 150, 105, 0.2); }
-        .status-disconnected { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
 
-        #authSection, #dashboardSection { display: none; }
+        .status-connected {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+
+        .status-disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        #registerSection,
+        #loginSection,
+        #dashboardSection {
+            display: none;
+        }
+
+        .msg {
+            font-size: 0.85rem;
+            margin-top: 20px;
+            min-height: 20px;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h1>NhanhHub</h1>
+    <div class="container">
+        <h1>NhanhHub</h1>
 
-    <!-- SECTION: LOGIN / REGISTER -->
-    <div id="authSection">
-        <p style="color: #64748b; margin-bottom: 24px;">Đăng nhập để quản lý Nhanh.vn</p>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="email" placeholder="hung@example.com">
+        <!-- SECTION: REGISTER (MẶC ĐỊNH) -->
+        <div id="registerSection">
+            <p class="subtitle">Khởi tạo tài khoản NhanhHub mới</p>
+            <div class="form-group">
+                <label>Email của bạn</label>
+                <input type="email" id="regEmail" placeholder="nhanhhub@example.com">
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" id="regPassword" placeholder="••••••••">
+            </div>
+            <button id="btnDoRegister" class="btn btn-primary">Đăng ký ngay</button>
+            <button class="btn btn-link" onclick="showLogin()">Đã có tài khoản? <span>Đăng nhập</span></button>
         </div>
-        <div class="form-group">
-            <label>Mật khẩu</label>
-            <input type="password" id="password" placeholder="••••••••">
+
+        <!-- SECTION: LOGIN -->
+        <div id="loginSection">
+            <p class="subtitle">Chào mừng bạn quay trở lại!</p>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="loginEmail" placeholder="nhanhhub@example.com">
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" id="loginPassword" placeholder="••••••••">
+            </div>
+            <button id="btnDoLogin" class="btn btn-primary">Đăng nhập</button>
+            <button class="btn btn-link" onclick="showRegister()">Chưa có tài khoản? <span>Đăng ký</span></button>
         </div>
-        <button id="btnLogin" class="btn btn-primary">Đăng nhập</button>
-        <button id="btnRegister" class="btn btn-secondary">Đăng ký tài khoản</button>
+
+        <!-- SECTION: DASHBOARD -->
+        <div id="dashboardSection">
+            <p id="userWelcome" style="font-weight: 600; margin-bottom: 5px;"></p>
+            <p class="subtitle" style="margin-bottom: 20px;">Quản lý kết nối Nhanh.vn</p>
+
+            <div id="statusBadge" class="status-badge">● Đang kiểm tra...</div>
+
+            <button id="btnConnect" class="btn btn-primary" style="display:none;">Kết nối tài khoản Nhanh.vn</button>
+            <button id="btnDisconnect" class="btn btn-secondary"
+                style="display:none; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">Hủy
+                liên kết tài khoản</button>
+
+            <button id="btnLogout" class="btn btn-link" style="margin-top: 30px;">Đăng xuất khỏi hệ thống</button>
+        </div>
+
+        <div id="msg" class="msg"></div>
     </div>
 
-    <!-- SECTION: DASHBOARD -->
-    <div id="dashboardSection">
-        <p id="userWelcome" style="color: #64748b; margin-bottom: 20px;"></p>
-        <div id="statusBadge" class="status-badge">● Đang kiểm tra...</div>
-        
-        <button id="btnConnect" class="btn btn-primary" style="display:none;">Kết nối Nhanh.vn</button>
-        <button id="btnDisconnect" class="btn btn-secondary" style="display:none;">Hủy liên kết</button>
-        <button id="btnLogout" class="btn btn-secondary" style="margin-top: 20px; border:none;">Đăng xuất</button>
-    </div>
+    <script>
+        const token = localStorage.getItem('access_token');
+        const msg = document.getElementById('msg');
 
-    <p id="msg" style="font-size: 0.8rem; margin-top: 15px; color: #ef4444;"></p>
-</div>
-
-<script>
-    const token = localStorage.getItem('access_token');
-    const authSection = document.getElementById('authSection');
-    const dashboardSection = document.getElementById('dashboardSection');
-    const msg = document.getElementById('msg');
-
-    if (token) {
-        showDashboard();
-        // Kiểm tra xem có vừa kết nối thành công không
-        if (window.location.search.includes('linked=success')) {
-            msg.style.color = '#059669';
-            msg.innerText = '🎉 Kết nối Nhanh.vn thành công!';
-        }
-    } else {
-        authSection.style.display = 'block';
-    }
-
-    // Đăng ký
-    document.getElementById('btnRegister').onclick = async () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const res = await fetch('/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        msg.innerText = data.message || (data.error ? data.message : 'Đăng ký thành công!');
-    };
-
-    // Đăng nhập
-    document.getElementById('btnLogin').onclick = async () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const res = await fetch('/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        if (data.access_token) {
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('user_email', email);
-            location.reload();
+        // Khởi tạo trang
+        if (token) {
+            showDashboard();
         } else {
-            msg.innerText = 'Sai email hoặc mật khẩu!';
+            showRegister();
         }
-    };
 
-    async function showDashboard() {
-        authSection.style.display = 'none';
-        dashboardSection.style.display = 'block';
-        document.getElementById('userWelcome').innerText = `Chào, ${localStorage.getItem('user_email')}!`;
-        
-        try {
-            const res = await fetch('/nhanh/status', {
+        function showRegister() {
+            document.getElementById('registerSection').style.display = 'block';
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'none';
+            msg.innerText = '';
+        }
+
+        function showLogin() {
+            document.getElementById('registerSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('dashboardSection').style.display = 'none';
+            msg.innerText = '';
+        }
+
+        // Xử lý Đăng ký
+        document.getElementById('btnDoRegister').onclick = async () => {
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            if (!email || !password) {
+                msg.style.color = 'var(--danger)';
+                msg.innerText = 'Vui lòng điền đủ thông tin!';
+                return;
+            }
+
+            try {
+                const res = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    msg.style.color = 'var(--success)';
+                    msg.innerText = 'Đăng ký thành công! Đang chuyển sang Đăng nhập...';
+                    setTimeout(showLogin, 1500); // Tự động chuyển sang Login
+                } else {
+                    msg.style.color = 'var(--danger)';
+                    msg.innerText = data.message || 'Email đã tồn tại!';
+                }
+            } catch (e) {
+                msg.innerText = 'Lỗi kết nối server!';
+            }
+        };
+
+        // Xử lý Đăng nhập
+        document.getElementById('btnDoLogin').onclick = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const res = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (data.access_token) {
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user_email', email);
+                    location.reload();
+                } else {
+                    msg.style.color = 'var(--danger)';
+                    msg.innerText = 'Sai email hoặc mật khẩu!';
+                }
+            } catch (e) {
+                msg.innerText = 'Lỗi kết nối!';
+            }
+        };
+
+        async function showDashboard() {
+            document.getElementById('registerSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('userWelcome').innerText = `Xin chào, ${localStorage.getItem('user_email')}`;
+
+            // Kiểm tra success từ URL
+            if (window.location.search.includes('linked=success')) {
+                msg.style.color = 'var(--success)';
+                msg.innerText = '🎉 Kết nối Nhanh.vn thành công!';
+            }
+
+            try {
+                const res = await fetch('/nhanh/status', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                });
+
+                if (res.status === 401) { logout(); return; }
+
+                const data = await res.json();
+                const badge = document.getElementById('statusBadge');
+                if (data.linked) {
+                    badge.innerText = '● Đã liên kết tài khoản Nhanh.vn';
+                    badge.className = 'status-badge status-connected';
+                    document.getElementById('btnDisconnect').style.display = 'block';
+                } else {
+                    badge.innerText = '○ Chưa kết nối Nhanh.vn';
+                    badge.className = 'status-badge status-disconnected';
+                    document.getElementById('btnConnect').style.display = 'block';
+                }
+            } catch (e) {
+                msg.innerText = 'Lỗi tải trạng thái!';
+            }
+        }
+
+        document.getElementById('btnConnect').onclick = () => {
+            window.location.href = `/nhanh/connect?token=${localStorage.getItem('access_token')}`;
+        };
+
+        document.getElementById('btnDisconnect').onclick = async () => {
+            if (!confirm('Bạn có chắc chắn muốn hủy liên kết tài khoản Nhanh.vn?')) return;
+            await fetch('/nhanh/disconnect', {
+                method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
             });
-            
-            if (res.status === 401) { logout(); return; }
-            
-            const data = await res.json();
-            const badge = document.getElementById('statusBadge');
-            if (data.linked) {
-                badge.innerText = '● Đã liên kết Nhanh.vn';
-                badge.className = 'status-badge status-connected';
-                document.getElementById('btnDisconnect').style.display = 'block';
-            } else {
-                badge.innerText = '○ Chưa liên kết';
-                badge.className = 'status-badge status-disconnected';
-                document.getElementById('btnConnect').style.display = 'block';
-            }
-        } catch (e) {
-            msg.innerText = 'Lỗi kết nối!';
+            location.reload();
+        };
+
+        document.getElementById('btnLogout').onclick = logout;
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
         }
-    }
-
-    document.getElementById('btnConnect').onclick = () => {
-        // Chuyển hướng kèm theo Token để Backend biết là ai
-        window.location.href = `/nhanh/connect?token=${localStorage.getItem('access_token')}`;
-    };
-
-    document.getElementById('btnDisconnect').onclick = async () => {
-        if (!confirm('Hủy liên kết?')) return;
-        await fetch('/nhanh/disconnect', {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-        });
-        location.reload();
-    };
-
-    document.getElementById('btnLogout').onclick = logout;
-
-    function logout() {
-        localStorage.clear();
-        location.reload();
-    }
-</script>
+    </script>
 
 </body>
+
 </html>
