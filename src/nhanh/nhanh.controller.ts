@@ -34,59 +34,86 @@ export class NhanhController {
    * Requires JWT to identify which user is connecting.
    */
   @Get('connect')
-  async connect(@Request() req, @Query('token') queryToken: string, @Res() res) {
+  @Redirect()
+  async connect(@Request() req, @Query('token') queryToken: string) {
     let userId = req.user?.userId;
-
     if (!userId && queryToken) {
       try {
         const payload = await this.jwtService.verifyAsync(queryToken, {
           secret: this.configService.get<string>('JWT_SECRET') || 'anh_hung_dep_trai_secret_key',
         });
         userId = payload.sub;
-      } catch (e) {
-        this.logger.error(`Token verification failed: ${e.message}`);
-      }
+      } catch (e) {}
     }
 
-    if (!userId) {
-      throw new BadRequestException('Vui lòng đăng nhập trước khi kết nối!');
-    }
+    if (!userId) throw new BadRequestException('Vui lòng đăng nhập trước!');
 
-    // Lưu userId vào Cookie trong 5 phút
-    const host = req.get('host');
-    const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
-    
-    res.cookie('nhanh_user_id', userId, {
-      httpOnly: true,
-      secure: !isLocal, // Bật secure nếu không phải localhost
-      sameSite: isLocal ? 'lax' : 'none', // Vercel cần 'none' để nhận cookie từ redirect ngoại trang
-      maxAge: 300000,
-      path: '/', // Đảm bảo cookie có hiệu lực trên toàn bộ domain
-    });
-
-    this.logger.log(`User ${userId} initiating Nhanh.vn connection (Cookie set)`);
+    this.logger.log(`User ${userId} initiating connection`);
     const url = this.nhanhService.buildConnectUrl(userId);
-    return res.redirect(url);
+    return { url, statusCode: HttpStatus.FOUND };
   }
 
+  /**
+   * Trang giao diện trung gian để nhận accessCode từ Nhanh.vn
+   * và gửi kèm Token của User về Server.
+   */
   @Get('callback')
-  @Redirect('/')
-  async callback(
-    @Query('accessCode') accessCode: string,
-    @Request() req,
-  ) {
-    // Đọc userId từ Cookie
-    const userId = req.cookies?.['nhanh_user_id'];
+  async callback(@Query('accessCode') accessCode: string, @Res() res) {
+    // Trả về một trang HTML nhỏ để xử lý phía Client
+    const html = `
+      <html>
+        <body style="background:#0f172a; color:white; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh;">
+          <div style="text-align:center;">
+            <h2>Đang xác thực với NhanhHub...</h2>
+            <p>Vui lòng đợi trong giây lát.</p>
+          </div>
+          <script>
+            async function finishLink() {
+              const accessCode = "${accessCode}";
+              const token = localStorage.getItem('access_token');
+              
+              if (!token) {
+                alert('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!');
+                window.location.href = '/';
+                return;
+              }
 
-    if (!accessCode || !userId) {
-      this.logger.error(`Callback missing data. Code: ${!!accessCode}, Cookie UserId: ${userId}`);
-      throw new BadRequestException('Không tìm thấy phiên làm việc (Cookie hết hạn hoặc bị chặn).');
-    }
+              try {
+                const res = await fetch('/nhanh/finalize-link', {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                  },
+                  body: JSON.stringify({ accessCode })
+                });
+                
+                if (res.ok) {
+                  window.location.href = '/?linked=success';
+                } else {
+                  const err = await res.json();
+                  alert('Lỗi: ' + err.message);
+                  window.location.href = '/';
+                }
+              } catch (e) {
+                alert('Lỗi kết nối server!');
+                window.location.href = '/';
+              }
+            }
+            finishLink();
+          </script>
+        </body>
+      </html>
+    `;
+    return res.send(html);
+  }
 
-    this.logger.log(`Received callback for userId from Cookie: ${userId}`);
-    await this.nhanhService.exchangeAccessCode(accessCode, userId);
-
-    return { url: '/', statusCode: HttpStatus.FOUND };
+  @Post('finalize-link')
+  @UseGuards(JwtAuthGuard)
+  async finalizeLink(@Request() req, @Body('accessCode') accessCode: string) {
+    const userId = req.user.userId;
+    this.logger.log(`Finalizing link for user: ${userId}`);
+    return await this.nhanhService.exchangeAccessCode(accessCode, userId);
   }
 
   /**
