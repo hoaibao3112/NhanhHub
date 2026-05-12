@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables — chứa thông tin nhạy cảm
+.env
+
+# Token file — chứa accessToken Nhanh.vn
+nhanh_token.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
