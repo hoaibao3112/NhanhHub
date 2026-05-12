@@ -12,6 +12,7 @@ import {
   Request,
   Post,
   Body,
+  Res,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -33,11 +34,9 @@ export class NhanhController {
    * Requires JWT to identify which user is connecting.
    */
   @Get('connect')
-  @Redirect()
-  async connect(@Request() req, @Query('token') queryToken?: string) {
+  async connect(@Request() req, @Query('token') queryToken: string, @Res() res) {
     let userId = req.user?.userId;
 
-    // Nếu không có trong Header (do trình duyệt redirect), thử lấy từ Query Token
     if (!userId && queryToken) {
       try {
         const payload = await this.jwtService.verifyAsync(queryToken, {
@@ -45,7 +44,7 @@ export class NhanhController {
         });
         userId = payload.sub;
       } catch (e) {
-        throw new BadRequestException('Token không hợp lệ hoặc đã hết hạn!');
+        this.logger.error(`Token verification failed: ${e.message}`);
       }
     }
 
@@ -53,26 +52,34 @@ export class NhanhController {
       throw new BadRequestException('Vui lòng đăng nhập trước khi kết nối!');
     }
 
-    this.logger.log(`User ${userId} initiating Nhanh.vn connection`);
+    // Lưu userId vào Cookie trong 5 phút
+    res.cookie('nhanh_user_id', userId, {
+      httpOnly: true,
+      secure: true, // true if using HTTPS
+      sameSite: 'none', // Required for cross-site redirects
+      maxAge: 300000,
+    });
+
+    this.logger.log(`User ${userId} initiating Nhanh.vn connection (Cookie set)`);
     const url = this.nhanhService.buildConnectUrl(userId);
-    return { url, statusCode: HttpStatus.FOUND };
+    return res.redirect(url);
   }
 
-  /**
-   * The OAuth callback endpoint that Nhanh.vn redirects to.
-   * We receive the accessCode and the userId we appended earlier.
-   */
   @Get('callback')
   @Redirect('/')
   async callback(
     @Query('accessCode') accessCode: string,
-    @Query('state') userId: string, // Nhanh.vn trả về userId qua tham số state
+    @Request() req,
   ) {
+    // Đọc userId từ Cookie
+    const userId = req.cookies?.['nhanh_user_id'];
+
     if (!accessCode || !userId) {
-      throw new BadRequestException('Missing accessCode or state (userId) in callback');
+      this.logger.error(`Callback missing data. Code: ${!!accessCode}, Cookie UserId: ${userId}`);
+      throw new BadRequestException('Không tìm thấy phiên làm việc (Cookie hết hạn hoặc bị chặn).');
     }
 
-    this.logger.log(`Received callback for userId: ${userId}`);
+    this.logger.log(`Received callback for userId from Cookie: ${userId}`);
     await this.nhanhService.exchangeAccessCode(accessCode, userId);
 
     return { url: '/', statusCode: HttpStatus.FOUND };
