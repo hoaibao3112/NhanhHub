@@ -222,16 +222,9 @@
     </div>
 
     <script>
-        const token = localStorage.getItem('access_token');
         const msg = document.getElementById('msg');
 
-        // Khởi tạo trang
-        if (token) {
-            showDashboard();
-        } else {
-            showRegister();
-        }
-
+        // Hàm ẩn hiện các Section
         function showRegister() {
             document.getElementById('registerSection').style.display = 'block';
             document.getElementById('loginSection').style.display = 'none';
@@ -246,144 +239,135 @@
             msg.innerText = '';
         }
 
-        // Xử lý Đăng ký
-        document.getElementById('btnDoRegister').onclick = async () => {
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-
-            if (!email || !password) {
-                msg.style.color = 'var(--danger)';
-                msg.innerText = 'Vui lòng điền đủ thông tin!';
-                return;
-            }
-
-            try {
-                const res = await fetch('/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await res.json();
-
-                if (res.ok) {
-                    msg.style.color = 'var(--success)';
-                    msg.innerText = '✨ Đăng ký thành công! Đang vào hệ thống...';
-
-                    // Tự động gọi Đăng nhập ngay lập tức
-                    const loginRes = await fetch('/auth/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
-                    });
-                    const loginData = await loginRes.json();
-
-                    if (loginData.access_token) {
-                        localStorage.setItem('access_token', loginData.access_token);
-                        localStorage.setItem('user_email', email);
-                        setTimeout(() => location.reload(), 1000);
-                    }
-                } else {
-                    msg.style.color = 'var(--danger)';
-                    msg.innerText = data.message || 'Email đã tồn tại!';
-                }
-            } catch (e) {
-                msg.innerText = 'Lỗi kết nối server!';
-            }
-        };
-
-        // Xử lý Đăng nhập
-        document.getElementById('btnDoLogin').onclick = async () => {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-
-            try {
-                const res = await fetch('/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await res.json();
-
-                if (data.access_token) {
-                    localStorage.setItem('access_token', data.access_token);
-                    localStorage.setItem('user_email', email);
-                    location.reload();
-                } else {
-                    msg.style.color = 'var(--danger)';
-                    msg.innerText = 'Sai email hoặc mật khẩu!';
-                }
-            } catch (e) {
-                msg.innerText = 'Lỗi kết nối!';
-            }
-        };
-
         async function showDashboard() {
             document.getElementById('registerSection').style.display = 'none';
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
             document.getElementById('userWelcome').innerText = `Xin chào, ${localStorage.getItem('user_email')}`;
 
-            // Kiểm tra success từ URL
             if (window.location.search.includes('linked=success')) {
                 msg.style.color = 'var(--success)';
                 msg.innerText = '🎉 Kết nối Nhanh.vn thành công!';
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
+            checkStatus();
+        }
 
+        // Kiểm tra trạng thái liên kết Nhanh.vn
+        async function checkStatus() {
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
             try {
                 const res = await fetch('/nhanh/status', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (res.status === 401) { logout(); return; }
 
                 const data = await res.json();
                 const badge = document.getElementById('statusBadge');
+                const btnConnect = document.getElementById('btnConnect');
+                const btnDisconnect = document.getElementById('btnDisconnect');
+
                 if (data.linked) {
                     badge.innerText = '● Đã liên kết tài khoản Nhanh.vn';
                     badge.className = 'status-badge status-connected';
-                    document.getElementById('btnDisconnect').style.display = 'block';
+                    btnConnect.style.display = 'none';
+                    btnDisconnect.style.display = 'block';
                 } else {
                     badge.innerText = '○ Chưa kết nối Nhanh.vn';
                     badge.className = 'status-badge status-disconnected';
-                    document.getElementById('btnConnect').style.display = 'block';
+                    btnConnect.style.display = 'block';
+                    btnDisconnect.style.display = 'none';
                 }
-            } catch (e) {
-                msg.innerText = 'Lỗi tải trạng thái!';
-            }
+            } catch (e) { console.error('Lỗi checkStatus:', e); }
         }
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        // --- XỬ LÝ SỰ KIỆN ---
+
+        // Đăng ký
+        document.getElementById('btnDoRegister').onclick = async () => {
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            if (!email || !password) { msg.innerText = 'Vui lòng điền đủ thông tin!'; return; }
+            msg.innerText = 'Đang xử lý...';
+            const res = await fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            if (res.ok) {
+                const loginRes = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const loginData = await loginRes.json();
+                localStorage.setItem('access_token', loginData.access_token);
+                localStorage.setItem('user_email', email);
+                showDashboard();
+            } else {
+                const d = await res.json();
+                msg.innerText = 'Lỗi: ' + d.message;
+            }
+        };
+
+        // Đăng nhập
+        document.getElementById('btnDoLogin').onclick = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const res = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (data.access_token) {
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('user_email', email);
+                showDashboard();
+            } else {
+                msg.innerText = 'Lỗi đăng nhập!';
+            }
+        };
 
         document.getElementById('btnConnect').onclick = () => {
             window.open(`/nhanh/connect?token=${localStorage.getItem('access_token')}`, '_blank');
         };
 
-        document.getElementById('btnCopyLink').onclick = () => {
-            const url = window.location.origin;
-            navigator.clipboard.writeText(url);
-            msg.style.color = 'var(--success)';
-            msg.innerText = '✅ Đã sao chép link App vào bộ nhớ tạm!';
-            setTimeout(() => msg.innerText = '', 2000);
-        };
-
         document.getElementById('btnDisconnect').onclick = async () => {
-            if (!confirm('Bạn có chắc chắn muốn hủy liên kết tài khoản Nhanh.vn?')) return;
+            if (!confirm('Hủy liên kết nhé anh?')) return;
             await fetch('/nhanh/disconnect', {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
             });
-            location.reload();
+            checkStatus();
         };
 
-        document.getElementById('btnLogout').onclick = () => {
-            localStorage.clear();
-            location.reload();
+        document.getElementById('btnCopyLink').onclick = () => {
+            const url = window.location.origin;
+            navigator.clipboard.writeText(url).then(() => alert('Đã chép link App!'));
         };
 
-        // "Con mắt thần": Tự động cập nhật lại trạng thái khi anh quay lại Tab này
-        window.onfocus = () => {
-            if (localStorage.getItem('access_token')) {
+        document.getElementById('btnLogout').onclick = logout;
+
+        // Khởi tạo
+        if (localStorage.getItem('access_token')) {
+            showDashboard();
+        } else {
+            showRegister();
+        }
+
+        // Tự động làm mới khi quay lại Tab
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && localStorage.getItem('access_token')) {
                 checkStatus();
             }
-        };
+        });
     </script>
 
 </body>
