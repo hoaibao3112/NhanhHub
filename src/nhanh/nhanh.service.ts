@@ -62,15 +62,20 @@ export class NhanhService {
     this.logger.log(`Exchanging accessCode: ${accessCode.substring(0, 5)}... for appId: ${appId}`);
 
     try {
+      this.logger.log(`Exchanging accessCode at open.nhanh.vn...`);
+      
       const response = await axios.post<{
         code: number;
         messages?: any;
         data?: { accessToken: string; businessId?: string | number };
       }>(
-        `https://nhanh.vn/api/app/getaccesstoken`,
+        `https://open.nhanh.vn/api/app/getaccesstoken`,
         { appId, accessCode, secretKey },
         {
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'User-Agent': 'NhanhHub-App'
+          },
         },
       );
 
