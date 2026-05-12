@@ -373,12 +373,17 @@
             location.reload();
         };
 
-        document.getElementById('btnLogout').onclick = logout;
-
-        function logout() {
+        document.getElementById('btnLogout').onclick = () => {
             localStorage.clear();
             location.reload();
-        }
+        };
+
+        // "Con mắt thần": Tự động cập nhật lại trạng thái khi anh quay lại Tab này
+        window.onfocus = () => {
+            if (localStorage.getItem('access_token')) {
+                checkStatus();
+            }
+        };
     </script>
 
 </body>
