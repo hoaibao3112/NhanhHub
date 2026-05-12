@@ -209,8 +209,10 @@
             <div id="statusBadge" class="status-badge">● Đang kiểm tra...</div>
 
             <button id="btnConnect" class="btn btn-primary" style="display:none;">Kết nối tài khoản Nhanh.vn</button>
+            <button id="btnCopyLink" class="btn btn-link" style="color: #60a5fa; text-decoration: none;">📋 Sao chép địa chỉ App</button>
+            
             <button id="btnDisconnect" class="btn btn-secondary"
-                style="display:none; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2);">Hủy
+                style="display:none; background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); margin-top: 10px;">Hủy
                 liên kết tài khoản</button>
 
             <button id="btnLogout" class="btn btn-link" style="margin-top: 30px;">Đăng xuất khỏi hệ thống</button>
@@ -351,7 +353,15 @@
         }
 
         document.getElementById('btnConnect').onclick = () => {
-            window.location.href = `/nhanh/connect?token=${localStorage.getItem('access_token')}`;
+            window.open(`/nhanh/connect?token=${localStorage.getItem('access_token')}`, '_blank');
+        };
+
+        document.getElementById('btnCopyLink').onclick = () => {
+            const url = window.location.origin;
+            navigator.clipboard.writeText(url);
+            msg.style.color = 'var(--success)';
+            msg.innerText = '✅ Đã sao chép link App vào bộ nhớ tạm!';
+            setTimeout(() => msg.innerText = '', 2000);
         };
 
         document.getElementById('btnDisconnect').onclick = async () => {

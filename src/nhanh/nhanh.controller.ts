@@ -89,15 +89,16 @@ export class NhanhController {
                 });
                 
                 if (res.ok) {
-                  window.location.href = '/?linked=success';
+                  alert('🎉 Kết nối thành công! Bây giờ bạn có thể TẮT TAB NÀY và quay lại trang chính.');
+                  document.body.innerHTML = '<h2 style="color: #059669; text-align: center; margin-top: 50px;">🎉 Kết nối thành công!<br>Vui lòng tắt Tab này để quay lại App.</h2>';
                 } else {
                   const err = await res.json();
                   alert('Lỗi: ' + err.message);
-                  window.location.href = '/';
+                  window.close();
                 }
               } catch (e) {
                 alert('Lỗi kết nối server!');
-                window.location.href = '/';
+                window.close();
               }
             }
             finishLink();
