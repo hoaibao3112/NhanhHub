@@ -56,18 +56,19 @@ export class NhanhService {
    * Exchanges an `accessCode` for an `accessToken` and saves it to Supabase for the specific user.
    */
   async exchangeAccessCode(accessCode: string, userId: string): Promise<NhanhTokenData> {
-    const appId = Number(this.getRequiredEnv('NHANH_APP_ID'));
-    const secretKey = this.getRequiredEnv('NHANH_SECRET_KEY');
+    const appIdStr = this.getRequiredEnv('NHANH_APP_ID');
+    const appId = Number(appIdStr);
+    const secretKey = this.getRequiredEnv('NHANH_SECRET_KEY').trim();
 
     this.logger.log(`Exchanging accessCode: ${accessCode.substring(0, 5)}... for appId: ${appId}`);
 
     try {
-      this.logger.log(`Exchanging accessCode at pos.open.nhanh.vn v3.0 (Query + Body)...`);
+      this.logger.log(`Exchanging accessCode at pos.open.nhanh.vn v3.0 (Strict Types)...`);
       
       const payload = { 
-        appId: appId.toString(), 
-        secretKey, 
-        accessCode 
+        appId: appId, // Gửi dưới dạng Number (rất quan trọng)
+        secretKey: secretKey, 
+        accessCode: accessCode 
       };
 
       const response = await axios.post<{
@@ -76,9 +77,9 @@ export class NhanhService {
         data?: { accessToken: string; businessId?: string | number };
       }>(
         `https://pos.open.nhanh.vn/v3.0/app/getaccesstoken`,
-        payload, // Gửi trong Body (JSON)
+        payload, 
         {
-          params: payload, // Gửi cả trên URL (Query String)
+          params: { appId }, // Query String chỉ cần appId là đủ
           headers: { 
             'Content-Type': 'application/json',
             'User-Agent': 'NhanhHub-App'
