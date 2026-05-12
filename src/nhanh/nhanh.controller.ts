@@ -53,11 +53,15 @@ export class NhanhController {
     }
 
     // Lưu userId vào Cookie trong 5 phút
+    const host = req.get('host');
+    const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
+    
     res.cookie('nhanh_user_id', userId, {
       httpOnly: true,
-      secure: true, // true if using HTTPS
-      sameSite: 'none', // Required for cross-site redirects
+      secure: !isLocal, // Bật secure nếu không phải localhost
+      sameSite: isLocal ? 'lax' : 'none', // Vercel cần 'none' để nhận cookie từ redirect ngoại trang
       maxAge: 300000,
+      path: '/', // Đảm bảo cookie có hiệu lực trên toàn bộ domain
     });
 
     this.logger.log(`User ${userId} initiating Nhanh.vn connection (Cookie set)`);
