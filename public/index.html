@@ -147,6 +147,11 @@
 
     if (token) {
         showDashboard();
+        // Kiểm tra xem có vừa kết nối thành công không
+        if (window.location.search.includes('linked=success')) {
+            msg.style.color = '#059669';
+            msg.innerText = '🎉 Kết nối Nhanh.vn thành công!';
+        }
     } else {
         authSection.style.display = 'block';
     }
