@@ -1,182 +1,108 @@
 import {
   Controller,
-  Delete,
   Get,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
   Query,
-  Redirect,
   Logger,
   BadRequestException,
-  HttpException,
+  HttpStatus,
+  Delete,
+  HttpCode,
   UseGuards,
+  Redirect,
+  Request,
+  Post,
+  Body,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { NhanhService } from './nhanh.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { NhanhAuthGuard } from './nhanh-auth.guard';
 
 @Controller('nhanh')
 export class NhanhController {
   private readonly logger = new Logger(NhanhController.name);
 
-  constructor(private readonly nhanhService: NhanhService) {}
+  constructor(
+    private readonly nhanhService: NhanhService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) { }
 
-  // ---------------------------------------------------------------------------
-  // GET /nhanh/connect
-  // ---------------------------------------------------------------------------
   /**
-   * Redirects the user to the Nhanh.vn OAuth authorisation page.
-   *
-   * Flow:
-   *   Browser → GET /nhanh/connect → 302 → https://nhanh.vn/oauth?...
+   * Redirects the user to Nhanh.vn's OAuth page.
+   * Requires JWT to identify which user is connecting.
    */
   @Get('connect')
   @Redirect()
-  connect() {
-    const url = this.nhanhService.buildConnectUrl();
-    this.logger.log(`Redirecting to Nhanh.vn OAuth: ${url}`);
+  async connect(@Request() req, @Query('token') queryToken?: string) {
+    let userId = req.user?.userId;
+
+    // Nếu không có trong Header (do trình duyệt redirect), thử lấy từ Query Token
+    if (!userId && queryToken) {
+      try {
+        const payload = await this.jwtService.verifyAsync(queryToken, {
+          secret: this.configService.get<string>('JWT_SECRET') || 'anh_hung_dep_trai_secret_key',
+        });
+        userId = payload.sub;
+      } catch (e) {
+        throw new BadRequestException('Token không hợp lệ hoặc đã hết hạn!');
+      }
+    }
+
+    if (!userId) {
+      throw new BadRequestException('Vui lòng đăng nhập trước khi kết nối!');
+    }
+
+    this.logger.log(`User ${userId} initiating Nhanh.vn connection`);
+    const url = this.nhanhService.buildConnectUrl(userId);
     return { url, statusCode: HttpStatus.FOUND };
   }
 
-  // ---------------------------------------------------------------------------
-  // GET /nhanh/callback?accessCode=XXX
-  // ---------------------------------------------------------------------------
   /**
-   * OAuth callback — Nhanh.vn redirects here after user authorises the app.
-   * Exchanges the one-time `accessCode` for a long-lived `accessToken` and
-   * persists it to `nhanh_token.json`.
+   * The OAuth callback endpoint that Nhanh.vn redirects to.
+   * We receive the accessCode and the userId we appended earlier.
    */
   @Get('callback')
   @Redirect('/')
-  async callback(@Query('accessCode') accessCode: string) {
-    if (!accessCode) {
-      throw new BadRequestException('Missing required query parameter: accessCode');
+  async callback(
+    @Query('accessCode') accessCode: string,
+    @Query('userId') userId: string,
+  ) {
+    if (!accessCode || !userId) {
+      throw new BadRequestException('Missing accessCode or userId in callback');
     }
 
-    this.logger.log(`Received callback with accessCode: ${accessCode.substring(0, 6)}...`);
+    this.logger.log(`Received callback for userId: ${userId}`);
+    await this.nhanhService.exchangeAccessCode(accessCode, userId);
 
-    const tokenData = await this.nhanhService.exchangeAccessCode(accessCode);
-
-    return {
-      url: '/',
-      statusCode: HttpStatus.FOUND,
-    };
+    return { url: '/', statusCode: HttpStatus.FOUND };
   }
 
-  // ---------------------------------------------------------------------------
-  // GET /nhanh/status
-  // ---------------------------------------------------------------------------
   /**
-   * Returns the current link status — whether a valid token is stored on disk.
+   * Returns the connection status for the logged-in user.
    */
   @Get('status')
-  status() {
-    const result = this.nhanhService.getStatus();
-
-    return {
-      linked: result.linked,
-      message: result.linked
-        ? 'Nhanh.vn account is linked.'
-        : 'No Nhanh.vn account linked.',
-      ...(result.linked && {
-        linkedAt: result.linkedAt,
-        businessId: result.businessId,
-      }),
-    };
+  @UseGuards(JwtAuthGuard)
+  async getStatus(@Request() req) {
+    return await this.nhanhService.getStatus(req.user.userId);
   }
 
-  // ---------------------------------------------------------------------------
-  // DELETE /nhanh/disconnect
-  // ---------------------------------------------------------------------------
   /**
-   * Removes the stored token file, effectively unlinking the Nhanh.vn account.
+   * Unlinks the Nhanh.vn account for the logged-in user.
    */
   @Delete('disconnect')
-  @UseGuards(NhanhAuthGuard)
+  @UseGuards(JwtAuthGuard) // Now using JWT for disconnect as well for consistency
   @HttpCode(HttpStatus.OK)
-  disconnect() {
-    const result = this.nhanhService.disconnect();
-
-    if (!result.success) {
-      throw new HttpException(
-        { success: false, message: result.message },
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    return { success: true, message: result.message };
+  async disconnect(@Request() req) {
+    return await this.nhanhService.disconnect(req.user.userId);
   }
 
-  // ---------------------------------------------------------------------------
-  // GET /nhanh/test-token
-  // ---------------------------------------------------------------------------
   /**
-   * Calls Nhanh.vn API to verify the stored token and retrieve business config.
-   * Useful for proving the token actually works for downstream API calls.
-   */
-  @Get('test-token')
-  async testToken() {
-    this.logger.log('Testing stored token via /nhanh/test-token endpoint');
-    return await this.nhanhService.checkAccessToken();
-  }
-
-  // ---------------------------------------------------------------------------
-  // GET /nhanh/products
-  // ---------------------------------------------------------------------------
-  /**
-   * Fetches the product list from Nhanh.vn using the stored token.
+   * Example: Fetch products for the logged-in user.
    */
   @Get('products')
-  async products(@Query('page') page?: string) {
-    this.logger.log(`Fetching products from /nhanh/products?page=${page ?? 1}`);
-    return await this.nhanhService.getProducts(page ? parseInt(page, 10) : 1);
-  }
-
-  // ---------------------------------------------------------------------------
-  // POST /nhanh/products
-  // ---------------------------------------------------------------------------
-  /**
-   * Creates new products on Nhanh.vn.
-   * Accepts a single product object or an array of products.
-   */
-  @Post('products')
   @UseGuards(JwtAuthGuard)
-  async createProduct(@Body() productData: any) {
-    this.logger.log('Creating new product(s) via POST /nhanh/products');
-    return await this.nhanhService.createProduct(productData);
-  }
-
-  // ---------------------------------------------------------------------------
-  // POST /nhanh/orders
-  // ---------------------------------------------------------------------------
-  /**
-   * Creates a new order on Nhanh.vn.
-   * Expects a JSON body containing order details (shippingAddress, products, etc.)
-   */
-  @Post('orders')
-  @UseGuards(JwtAuthGuard)
-  async createOrder(@Body() orderData: any) {
-    this.logger.log('Creating a new order via POST /nhanh/orders');
-    return await this.nhanhService.createOrder(orderData);
-  }
-
-  // ---------------------------------------------------------------------------
-  // GET /nhanh/cities
-  // ---------------------------------------------------------------------------
-  @Get('cities')
-  async cities(@Query('version') version?: string) {
-    this.logger.log(`Fetching all cities from Nhanh.vn (version=${version ?? 'v1'})`);
-    return await this.nhanhService.getLocations('CITY', undefined, version || 'v1');
-  }
-
-  // ---------------------------------------------------------------------------
-  // GET /nhanh/districts?cityId=XXX&version=v1
-  // ---------------------------------------------------------------------------
-  @Get('districts')
-  async districts(@Query('cityId') cityId: string, @Query('version') version?: string) {
-    this.logger.log(`Fetching districts for cityId=${cityId} (version=${version ?? 'v1'})`);
-    return await this.nhanhService.getLocations('DISTRICT', cityId ? parseInt(cityId, 10) : undefined, version || 'v1');
+  async getProducts(@Request() req, @Query('page') page?: number) {
+    return await this.nhanhService.getProducts(req.user.userId, page);
   }
 }

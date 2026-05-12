@@ -5,6 +5,7 @@ import { join } from 'path';
 import { NhanhModule } from './nhanh/nhanh.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { SupabaseModule } from './supabase/supabase.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UsersModule } from './users/users.module';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
     }),
+    SupabaseModule,
     AuthModule,
     UsersModule,
     NhanhModule,

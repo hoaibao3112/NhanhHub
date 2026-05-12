@@ -24,10 +24,9 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden;
         }
 
-        .dashboard {
+        .container {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -53,49 +52,27 @@
             -webkit-text-fill-color: transparent;
         }
 
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 16px;
-            border-radius: 100px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            margin-bottom: 30px;
-            transition: all 0.3s ease;
-        }
-
-        .status-disconnected {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .status-connected {
-            background: rgba(5, 150, 105, 0.1);
-            color: var(--success);
-            border: 1px solid rgba(5, 150, 105, 0.2);
-        }
-
-        .info-box {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 30px;
+        .form-group {
+            margin-bottom: 15px;
             text-align: left;
-            font-size: 0.9rem;
-            display: none;
         }
 
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
             color: #94a3b8;
         }
 
-        .info-item span:last-child {
-            color: #f1f5f9;
-            font-weight: 600;
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.2);
+            color: white;
+            box-sizing: border-box;
+            outline: none;
         }
 
         .btn {
@@ -106,143 +83,154 @@
             font-weight: 600;
             font-size: 1rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s;
             border: none;
-            outline: none;
             margin-bottom: 12px;
         }
 
-        .btn-connect {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 10px 15px -3px rgba(12, 131, 255, 0.3);
-        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
 
-        .btn-connect:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgba(12, 131, 255, 0.4);
-            filter: brightness(1.1);
+        .status-badge {
+            display: inline-flex;
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
         }
+        .status-connected { background: rgba(5, 150, 105, 0.1); color: var(--success); border: 1px solid rgba(5, 150, 105, 0.2); }
+        .status-disconnected { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
 
-        .btn-disconnect {
-            background: rgba(255, 255, 255, 0.05);
-            color: #94a3b8;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: none;
-        }
-
-        .btn-disconnect:hover {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border-color: rgba(239, 68, 68, 0.2);
-        }
-
-        .loader {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top: 3px solid #fff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: none;
-            margin: 0 auto;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #authSection, #dashboardSection { display: none; }
     </style>
 </head>
 <body>
 
-<div class="dashboard">
+<div class="container">
     <h1>NhanhHub</h1>
-    <p style="color: #64748b; margin-bottom: 24px;">Chào anh Hưng! Hệ thống quản lý tài khoản Nhanh.vn</p>
 
-    <div id="statusBadge" class="status-badge status-disconnected">
-        Đang tải trạng thái...
+    <!-- SECTION: LOGIN / REGISTER -->
+    <div id="authSection">
+        <p style="color: #64748b; margin-bottom: 24px;">Đăng nhập để quản lý Nhanh.vn</p>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="hung@example.com">
+        </div>
+        <div class="form-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="password" placeholder="••••••••">
+        </div>
+        <button id="btnLogin" class="btn btn-primary">Đăng nhập</button>
+        <button id="btnRegister" class="btn btn-secondary">Đăng ký tài khoản</button>
     </div>
 
-    <div id="infoBox" class="info-box">
-        <div class="info-item"><span>Business ID:</span> <span id="valBusinessId">-</span></div>
-        <div class="info-item"><span>Liên kết lúc:</span> <span id="valLinkedAt">-</span></div>
+    <!-- SECTION: DASHBOARD -->
+    <div id="dashboardSection">
+        <p id="userWelcome" style="color: #64748b; margin-bottom: 20px;"></p>
+        <div id="statusBadge" class="status-badge">● Đang kiểm tra...</div>
+        
+        <button id="btnConnect" class="btn btn-primary" style="display:none;">Kết nối Nhanh.vn</button>
+        <button id="btnDisconnect" class="btn btn-secondary" style="display:none;">Hủy liên kết</button>
+        <button id="btnLogout" class="btn btn-secondary" style="margin-top: 20px; border:none;">Đăng xuất</button>
     </div>
 
-    <button id="btnConnect" class="btn btn-connect">Kết nối Nhanh.vn</button>
-    <button id="btnDisconnect" class="btn btn-disconnect">Hủy liên kết tài khoản</button>
-    
-    <div id="loader" class="loader"></div>
-    <p id="msg" style="font-size: 0.8rem; margin-top: 15px; color: #64748b;"></p>
+    <p id="msg" style="font-size: 0.8rem; margin-top: 15px; color: #ef4444;"></p>
 </div>
 
 <script>
-    const statusBadge = document.getElementById('statusBadge');
-    const infoBox = document.getElementById('infoBox');
-    const btnConnect = document.getElementById('btnConnect');
-    const btnDisconnect = document.getElementById('btnDisconnect');
-    const loader = document.getElementById('loader');
+    const token = localStorage.getItem('access_token');
+    const authSection = document.getElementById('authSection');
+    const dashboardSection = document.getElementById('dashboardSection');
     const msg = document.getElementById('msg');
 
-    // Key bảo mật (Trong thực tế nên dùng Login JWT, đây là bản test dùng API Key anh đã đặt)
-    const API_KEY = 'anhhungdeptrai';
+    if (token) {
+        showDashboard();
+    } else {
+        authSection.style.display = 'block';
+    }
 
-    async function checkStatus() {
+    // Đăng ký
+    document.getElementById('btnRegister').onclick = async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const res = await fetch('/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        msg.innerText = data.message || (data.error ? data.message : 'Đăng ký thành công!');
+    };
+
+    // Đăng nhập
+    document.getElementById('btnLogin').onclick = async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const res = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+            localStorage.setItem('user_email', email);
+            location.reload();
+        } else {
+            msg.innerText = 'Sai email hoặc mật khẩu!';
+        }
+    };
+
+    async function showDashboard() {
+        authSection.style.display = 'none';
+        dashboardSection.style.display = 'block';
+        document.getElementById('userWelcome').innerText = `Chào, ${localStorage.getItem('user_email')}!`;
+        
         try {
-            const res = await fetch('/nhanh/status');
+            const res = await fetch('/nhanh/status', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            });
+            
+            if (res.status === 401) { logout(); return; }
+            
             const data = await res.json();
-
+            const badge = document.getElementById('statusBadge');
             if (data.linked) {
-                statusBadge.innerText = '● Đã liên kết';
-                statusBadge.className = 'status-badge status-connected';
-                infoBox.style.display = 'block';
-                btnDisconnect.style.display = 'block';
-                btnConnect.style.display = 'none';
-                document.getElementById('valBusinessId').innerText = data.businessId;
-                document.getElementById('valLinkedAt').innerText = new Date(data.linkedAt).toLocaleString('vi-VN');
+                badge.innerText = '● Đã liên kết Nhanh.vn';
+                badge.className = 'status-badge status-connected';
+                document.getElementById('btnDisconnect').style.display = 'block';
             } else {
-                statusBadge.innerText = '○ Chưa liên kết';
-                statusBadge.className = 'status-badge status-disconnected';
-                infoBox.style.display = 'none';
-                btnDisconnect.style.display = 'none';
-                btnConnect.style.display = 'block';
+                badge.innerText = '○ Chưa liên kết';
+                badge.className = 'status-badge status-disconnected';
+                document.getElementById('btnConnect').style.display = 'block';
             }
         } catch (e) {
-            msg.innerText = 'Lỗi kết nối Server!';
+            msg.innerText = 'Lỗi kết nối!';
         }
     }
 
-    btnConnect.onclick = () => {
-        window.location.href = '/nhanh/connect';
+    document.getElementById('btnConnect').onclick = () => {
+        // Chuyển hướng kèm theo Token để Backend biết là ai
+        window.location.href = `/nhanh/connect?token=${localStorage.getItem('access_token')}`;
     };
 
-    btnDisconnect.onclick = async () => {
-        if (!confirm('Anh Hưng chắc chắn muốn hủy liên kết không?')) return;
-        
-        loader.style.display = 'block';
-        btnDisconnect.disabled = true;
-
-        try {
-            // Lưu ý: Lệnh Disconnect yêu cầu mã bảo mật x-api-key
-            const res = await fetch('/nhanh/disconnect', {
-                method: 'DELETE',
-                headers: { 'x-api-key': API_KEY }
-            });
-            const data = await res.json();
-            
-            if (data.success) {
-                msg.innerText = 'Đã hủy liên kết thành công!';
-                setTimeout(() => { location.reload(); }, 1500);
-            } else {
-                msg.innerText = data.message || 'Lỗi không xác định';
-            }
-        } catch (e) {
-            msg.innerText = 'Lỗi khi gọi API!';
-        } finally {
-            loader.style.display = 'none';
-            btnDisconnect.disabled = false;
-        }
+    document.getElementById('btnDisconnect').onclick = async () => {
+        if (!confirm('Hủy liên kết?')) return;
+        await fetch('/nhanh/disconnect', {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+        });
+        location.reload();
     };
 
-    // Tự động kiểm tra trạng thái khi vừa vào trang
-    checkStatus();
+    document.getElementById('btnLogout').onclick = logout;
+
+    function logout() {
+        localStorage.clear();
+        location.reload();
+    }
 </script>
 
 </body>
