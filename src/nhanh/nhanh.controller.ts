@@ -66,10 +66,10 @@ export class NhanhController {
   @Redirect('/')
   async callback(
     @Query('accessCode') accessCode: string,
-    @Query('userId') userId: string,
+    @Query('state') userId: string, // Nhanh.vn trả về userId qua tham số state
   ) {
     if (!accessCode || !userId) {
-      throw new BadRequestException('Missing accessCode or userId in callback');
+      throw new BadRequestException('Missing accessCode or state (userId) in callback');
     }
 
     this.logger.log(`Received callback for userId: ${userId}`);

@@ -44,10 +44,10 @@ export class NhanhService {
     const url = new URL('https://nhanh.vn/oauth');
     url.searchParams.set('version', '3.0');
     url.searchParams.set('appId', appId);
+    url.searchParams.set('returnLink', redirectUrl);
     
-    // Thêm userId vào callback URL để biết ai vừa kết nối
-    const finalRedirect = `${redirectUrl}?userId=${userId}`;
-    url.searchParams.set('returnLink', finalRedirect);
+    // Gửi userId qua tham số state thay vì đính kèm vào URL
+    url.searchParams.set('state', userId);
 
     return url.toString();
   }
