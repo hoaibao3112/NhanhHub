@@ -56,19 +56,19 @@ export class NhanhService {
    * Exchanges an `accessCode` for an `accessToken` and saves it to Supabase for the specific user.
    */
   async exchangeAccessCode(accessCode: string, userId: string): Promise<NhanhTokenData> {
-    const appId = this.getRequiredEnv('NHANH_APP_ID');
+    const appId = Number(this.getRequiredEnv('NHANH_APP_ID'));
     const secretKey = this.getRequiredEnv('NHANH_SECRET_KEY');
 
-    this.logger.log(`Exchanging accessCode for userId: ${userId}`);
+    this.logger.log(`Exchanging accessCode: ${accessCode.substring(0, 5)}... for appId: ${appId}`);
 
     try {
       const response = await axios.post<{
         code: number;
-        messages?: Record<string, string>;
+        messages?: any;
         data?: { accessToken: string; businessId?: string | number };
       }>(
         `https://nhanh.vn/api/app/getaccesstoken`,
-        { appId, accessCode, secretKey }, // Đưa appId vào đây
+        { appId, accessCode, secretKey },
         {
           headers: { 'Content-Type': 'application/json' },
         },
@@ -77,7 +77,8 @@ export class NhanhService {
       const { code, messages, data } = response.data;
 
       if (code !== 1 || !data?.accessToken) {
-        const errorMsg = messages ? Object.values(messages).join(', ') : 'Unknown error from Nhanh.vn';
+        this.logger.error(`Nhanh.vn error response: ${JSON.stringify(response.data)}`);
+        const errorMsg = messages ? (typeof messages === 'string' ? messages : JSON.stringify(messages)) : 'Unknown error from Nhanh.vn';
         throw new InternalServerErrorException(`Nhanh.vn API error: ${errorMsg}`);
       }
 
