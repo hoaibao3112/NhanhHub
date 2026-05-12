@@ -62,12 +62,13 @@ export class NhanhService {
     this.logger.log(`Exchanging accessCode: ${accessCode.substring(0, 5)}... for appId: ${appId}`);
 
     try {
-      this.logger.log(`Exchanging accessCode at pos.open.nhanh.vn v3.0 (Form Data)...`);
+      this.logger.log(`Exchanging accessCode at pos.open.nhanh.vn v3.0 (Query + Body)...`);
       
-      const params = new URLSearchParams();
-      params.append('appId', appId.toString());
-      params.append('secretKey', secretKey);
-      params.append('accessCode', accessCode);
+      const payload = { 
+        appId: appId.toString(), 
+        secretKey, 
+        accessCode 
+      };
 
       const response = await axios.post<{
         code: number;
@@ -75,10 +76,11 @@ export class NhanhService {
         data?: { accessToken: string; businessId?: string | number };
       }>(
         `https://pos.open.nhanh.vn/v3.0/app/getaccesstoken`,
-        params.toString(),
+        payload, // Gửi trong Body (JSON)
         {
+          params: payload, // Gửi cả trên URL (Query String)
           headers: { 
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
             'User-Agent': 'NhanhHub-App'
           },
         },
