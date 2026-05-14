@@ -396,6 +396,12 @@
         let cart = [];
 
         // 1. Tải sản phẩm từ Nhanh.vn
+        function getNormalizedPrice(product) {
+            const raw = product.salePrice ?? product.price ?? product.priceSell ?? 0;
+            const digits = raw.toString().replace(/\./g, '');
+            const value = parseInt(digits, 10);
+            return Number.isNaN(value) ? 0 : value;
+        }
         async function loadProducts() {
             try {
                 const res = await fetch('/nhanh/products', {
@@ -470,10 +476,9 @@
 
                     const stock = p.available ?? p.inventory?.available ?? 100;
                     
-                    // Thử lấy giá từ nhiều nguồn khác nhau
-                    const rawPrice = p.salePrice || p.price || '0';
-                    const priceRaw = rawPrice.toString().replace(/\./g, '');
-                    const price = parseInt(priceRaw).toLocaleString();
+                    const normalizedPrice = getNormalizedPrice(p);
+                    p.price = normalizedPrice;
+                    const price = normalizedPrice.toLocaleString();
 
                     card.innerHTML = `
                         <div class="product-img-container">
