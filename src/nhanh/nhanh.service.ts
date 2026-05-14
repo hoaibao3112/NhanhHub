@@ -317,7 +317,7 @@ export class NhanhService {
       { name: 'Sản phẩm Demo 2', price: 250000, code: 'DEMO002', categoryId: 1 }
     ];
 
-    const results = [];
+    const results: any[] = [];
     for (const p of demoProducts) {
       try {
         const response = await axios.post(
