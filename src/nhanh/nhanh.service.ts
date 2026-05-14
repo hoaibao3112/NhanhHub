@@ -112,18 +112,20 @@ export class NhanhService {
       const token = await this.getValidToken(userId);
       const appId = this.getRequiredEnv('NHANH_APP_ID');
 
-      const params = new URLSearchParams();
-      params.append('appId', String(appId));
-      params.append('businessId', String(token.businessId));
-      params.append('accessToken', token.accessToken);
-      params.append('filters', JSON.stringify({}));
-      params.append('paginator', JSON.stringify({ size: 100, page }));
-
       const response = await axios.post(
         `${NHANH_BASE_URL}/product/list`,
-        params,
+        { 
+          appId: String(appId),
+          businessId: String(token.businessId),
+          accessToken: token.accessToken,
+          filters: {}, 
+          paginator: { size: 100, page } 
+        },
         {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': token.accessToken 
+          },
         },
       );
       if (response.data.code !== 1) {
@@ -177,18 +179,20 @@ export class NhanhService {
       const token = await this.getValidToken(userId);
       const appId = this.getRequiredEnv('NHANH_APP_ID');
 
-      const params = new URLSearchParams();
-      params.append('version', '3.0');
-      params.append('appId', String(appId));
-      params.append('businessId', String(token.businessId));
-      params.append('accessToken', token.accessToken);
-      params.append('filters', JSON.stringify({ status: 'active' }));
-
       const response = await axios.post(
         `${NHANH_BASE_URL}/business/depot`,
-        params,
         {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+          version: '3.0',
+          appId: String(appId),
+          businessId: String(token.businessId),
+          accessToken: token.accessToken,
+          filters: { status: 'active' }
+        },
+        {
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': token.accessToken 
+          },
         },
       );
       this.logger.log(`Danh sách kho từ Nhanh.vn: ${JSON.stringify(response.data.data)}`);
