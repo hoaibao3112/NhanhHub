@@ -216,24 +216,20 @@ export class NhanhService {
 
     try {
       // Nhanh.vn v3.0 definitive structure
-      const params = new URLSearchParams();
-      params.append('appId', String(appId));
-      params.append('businessId', String(token.businessId));
-      params.append('accessToken', token.accessToken);
-      
-      // Đưa shopOrderId ra ngoài cùng nếu có
-      if (orderData.shopOrderId) {
-        params.append('shopOrderId', String(orderData.shopOrderId));
-      }
-      
-      params.append('data', JSON.stringify(orderData));
-
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/add`,
-        params,
         {
+          appId: String(appId),
+          businessId: String(token.businessId),
+          accessToken: token.accessToken,
+          shopOrderId: String(orderData.shopOrderId || ''),
+          data: JSON.stringify(orderData)
+        },
+        {
+          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/json', 
+            'Authorization': token.accessToken 
           },
         },
       );
