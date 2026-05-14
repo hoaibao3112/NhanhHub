@@ -158,8 +158,8 @@ export class NhanhService {
       const appId = this.getRequiredEnv('NHANH_APP_ID');
 
       const response = await axios.post(
-        `${NHANH_BASE_URL}/depot/list`,
-        {},
+        `${NHANH_BASE_URL}/business/depot`,
+        { filters: {} },
         {
           params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },

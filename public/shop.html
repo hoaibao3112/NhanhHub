@@ -452,6 +452,11 @@
             try {
                 const res = await fetch('/nhanh/depots', { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.message || 'Không thể tải danh sách kho');
+                }
+
                 const select = document.getElementById('depotId');
                 if (data.data) {
                     const depots = Array.isArray(data.data) ? data.data : Object.values(data.data);
@@ -462,7 +467,9 @@
                         select.appendChild(opt);
                     });
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         function addToCart(product) {
