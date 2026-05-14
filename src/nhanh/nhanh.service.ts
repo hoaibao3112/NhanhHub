@@ -236,8 +236,9 @@ export class NhanhService {
       );
 
       if (response.data.code !== 1) {
-        this.logger.error(`Nhanh.vn API Error: ${JSON.stringify(response.data.messages)}`);
-        throw new BadRequestException(`Nhanh.vn error: ${JSON.stringify(response.data.messages)}`);
+        const detailError = JSON.stringify(response.data.messages) || response.data.errorCode;
+        this.logger.error(`Nhanh.vn API Error: ${detailError}`);
+        throw new BadRequestException(`Nhanh.vn báo lỗi: ${detailError}`);
       }
       return response.data;
     } catch (error: any) {
@@ -321,6 +322,8 @@ export class NhanhService {
       status: 'New',
       sendSms: 0,
     };
+
+    this.logger.log(`[SmartCheckout] Final Payload: ${JSON.stringify(payload)}`);
 
     return await this.createOrder(userId, payload);
   }
