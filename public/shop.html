@@ -397,7 +397,7 @@
 
         // 1. Tải sản phẩm từ Nhanh.vn
         function getNormalizedPrice(product) {
-            const raw = product.salePrice ?? product.price ?? product.priceSell ?? 0;
+            const raw = product.salePrice ?? product.price ?? product.priceSell ?? product.prices?.retail ?? 0;
             const digits = raw.toString().replace(/\./g, '');
             const value = parseInt(digits, 10);
             return Number.isNaN(value) ? 0 : value;
@@ -448,7 +448,7 @@
                     card.className = 'product-card';
                     
                     // Thử mọi cách để lấy link ảnh thật
-                    let imgUrl = p.image || p.thumbnail || p.imagePath || '';
+                    let imgUrl = p.image || p.thumbnail || p.imagePath || p.images?.avatar || '';
                     
                     // Nếu là đường dẫn tương đối, ghép với imageHost
                     if (imgUrl && !imgUrl.startsWith('http')) {
