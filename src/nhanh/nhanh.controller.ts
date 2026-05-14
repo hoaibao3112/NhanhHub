@@ -144,4 +144,31 @@ export class NhanhController {
   async getProducts(@Request() req, @Query('page') page?: number) {
     return await this.nhanhService.getProducts(req.user.userId, page);
   }
+
+  /**
+   * Fetch orders for the logged-in user.
+   */
+  @Get('orders')
+  @UseGuards(JwtAuthGuard)
+  async getOrders(@Request() req, @Query('page') page?: number) {
+    return await this.nhanhService.getOrders(req.user.userId, page);
+  }
+
+  /**
+   * Fetch warehouses (depots) for the logged-in user.
+   */
+  @Get('depots')
+  @UseGuards(JwtAuthGuard)
+  async getDepots(@Request() req) {
+    return await this.nhanhService.getDepots(req.user.userId);
+  }
+
+  /**
+   * Smart Checkout: Check inventory + Calculate Ship + Create Order
+   */
+  @Post('smart-checkout')
+  @UseGuards(JwtAuthGuard)
+  async smartCheckout(@Request() req, @Body() checkoutData: any) {
+    return await this.nhanhService.smartCheckout(req.user.userId, checkoutData);
+  }
 }

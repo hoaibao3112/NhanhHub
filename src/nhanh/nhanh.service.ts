@@ -163,6 +163,214 @@ export class NhanhService {
     }
   }
 
+  /**
+   * Fetches orders using the user's specific token.
+   */
+  async getOrders(userId: string, page = 1): Promise<any> {
+    const token = await this.loadTokenFromDb(userId);
+    if (!token) throw new BadRequestException('Vui lòng kết nối tài khoản Nhanh.vn trước!');
+
+    const appId = this.getRequiredEnv('NHANH_APP_ID');
+
+    try {
+      const response = await axios.post(
+        `${NHANH_BASE_URL}/order/index`,
+        { filters: {}, paginator: { size: 50, page } },
+        {
+          params: { appId, businessId: token.businessId },
+          headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
+        },
+      );
+      return response.data;
+    } catch (error: unknown) {
+      throw new InternalServerErrorException(`Lỗi lấy danh sách đơn hàng: ${error}`);
+    }
+  }
+
+  /**
+   * Fetches warehouses (depots) from Nhanh.vn.
+   */
+  async getDepots(userId: string): Promise<any> {
+    const token = await this.loadTokenFromDb(userId);
+    if (!token) throw new BadRequestException('Vui lòng kết nối tài khoản Nhanh.vn trước!');
+
+    const appId = this.getRequiredEnv('NHANH_APP_ID');
+
+    try {
+      const response = await axios.post(
+        `${NHANH_BASE_URL}/depot/list`,
+        {},
+        {
+          params: { appId, businessId: token.businessId },
+          headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
+        },
+      );
+      return response.data;
+    } catch (error: unknown) {
+      throw new InternalServerErrorException(`Lỗi lấy danh sách kho: ${error}`);
+    }
+  }
+
+  /**
+   * Creates a new order on Nhanh.vn.
+   */
+  async createOrder(userId: string, orderData: any): Promise<any> {
+    const token = await this.loadTokenFromDb(userId);
+    if (!token) throw new BadRequestException('Vui lòng kết nối tài khoản Nhanh.vn trước!');
+
+    const appId = this.getRequiredEnv('NHANH_APP_ID');
+
+    try {
+      const response = await axios.post(
+        `${NHANH_BASE_URL}/order/add`,
+        orderData,
+        {
+          params: { appId, businessId: token.businessId },
+          headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
+        },
+      );
+
+      if (response.data.code !== 1) {
+        this.logger.error(`Error creating order: ${JSON.stringify(response.data)}`);
+        throw new InternalServerErrorException(`Nhanh.vn error: ${JSON.stringify(response.data.messages)}`);
+      }
+
+      return response.data;
+    } catch (error: unknown) {
+      if (error instanceof InternalServerErrorException) throw error;
+      throw new InternalServerErrorException(`Lỗi tạo đơn hàng: ${error}`);
+    }
+  }
+
+  /**
+   * LUỒNG SMART CHECKOUT (Nhanh.vn Integration)
+   */
+  async smartCheckout(userId: string, checkoutData: any): Promise<any> {
+    const { products, shippingTo, depotId } = checkoutData;
+
+    // 1. Kiểm tra tồn kho thực tế qua Nhanh API
+    this.logger.log(`Step 1: Verifying inventory via Nhanh.vn API...`);
+    const inventoryResult = await this.checkInventory(userId, products);
+    if (!inventoryResult.allAvailable) {
+      throw new BadRequestException({
+        message: 'Không đủ tồn kho trên Nhanh.vn!',
+        details: inventoryResult.failedItems
+      });
+    }
+
+    // 2. Tính phí ship thực tế từ Nhanh API
+    this.logger.log(`Step 2: Calculating shipping fee via Nhanh.vn API...`);
+    const shippingResult = await this.calculateShippingFee(userId, {
+      depotId,
+      shippingTo,
+      products
+    });
+
+    if (!shippingResult.success) {
+      throw new BadRequestException('Không thể tính phí vận chuyển từ Nhanh.vn!');
+    }
+
+    // 3. Tạo đơn hàng với thông tin đã tối ưu
+    this.logger.log(`Step 3: Creating final order on Nhanh.vn...`);
+    const finalOrderPayload = {
+      info: {
+        depotId: depotId,
+        type: 1, // Đơn hàng bình thường
+        description: 'Đơn hàng từ NhanhHub Smart Checkout',
+      },
+      shippingAddress: shippingTo,
+      products: products.map(p => ({
+        id: p.id,
+        quantity: p.quantity,
+        price: p.price
+      })),
+      carrier: {
+        id: shippingResult.bestCarrierId,
+        customerShipFee: shippingResult.fee,
+      }
+    };
+
+    return await this.createOrder(userId, finalOrderPayload);
+  }
+
+  /**
+   * Helper: Check inventory on Nhanh.vn
+   */
+  private async checkInventory(userId: string, products: any[]): Promise<any> {
+    const token = await this.loadTokenFromDb(userId);
+    const appId = this.getRequiredEnv('NHANH_APP_ID');
+
+    // Lấy chi tiết sản phẩm từ Nhanh để check available
+    const productIds = products.map(p => p.id);
+    const response = await axios.post(
+      `${NHANH_BASE_URL}/product/list`,
+      { filters: { ids: productIds } },
+      {
+        params: { appId, businessId: token.businessId },
+        headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
+      }
+    );
+
+    const nhanhProducts = response.data?.data?.items || [];
+    const failedItems = [];
+
+    for (const item of products) {
+      const nhanhProd = nhanhProducts.find(p => p.id === item.id);
+      if (!nhanhProd || (nhanhProd.available < item.quantity)) {
+        failedItems.push({
+          id: item.id,
+          requested: item.quantity,
+          available: nhanhProd ? nhanhProd.available : 0
+        });
+      }
+    }
+
+    return {
+      allAvailable: failedItems.length === 0,
+      failedItems
+    };
+  }
+
+  /**
+   * Helper: Calculate shipping fee via Nhanh.vn
+   */
+  private async calculateShippingFee(userId: string, data: any): Promise<any> {
+    const token = await this.loadTokenFromDb(userId);
+    const appId = this.getRequiredEnv('NHANH_APP_ID');
+
+    try {
+      const response = await axios.post(
+        `${NHANH_BASE_URL}/shipping/fee`,
+        {
+          type: 1, // Sử dụng kết nối có sẵn của Nhanh.vn
+          depotId: data.depotId,
+          shippingTo: data.shippingTo,
+          price: data.products.reduce((acc, p) => acc + (p.price * p.quantity), 0),
+          shippingWeight: 500, // Mặc định 500g nếu không có dữ liệu
+        },
+        {
+          params: { appId, businessId: token.businessId },
+          headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
+        }
+      );
+
+      // Nhanh.vn trả về danh sách các hãng, ta chọn hãng đầu tiên (thường là rẻ nhất hoặc tối ưu)
+      const carriers = response.data?.data || [];
+      if (carriers.length === 0) return { success: false };
+
+      const bestCarrier = carriers[0];
+      return {
+        success: true,
+        fee: bestCarrier.fee,
+        bestCarrierId: bestCarrier.id,
+        carrierName: bestCarrier.name
+      };
+    } catch (e) {
+      this.logger.error(`Shipping calculation failed: ${e.message}`);
+      return { success: false };
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Database Helpers
   // ---------------------------------------------------------------------------
