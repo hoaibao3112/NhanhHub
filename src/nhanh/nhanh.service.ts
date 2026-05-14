@@ -314,8 +314,12 @@ export class NhanhService {
       calcShipFee: 0,
       
       // Mandatory for v3 body
-      appId: undefined, // Will be set in createOrder
-      businessId: undefined, // Will be set in createOrder
+      appId: undefined, 
+      businessId: undefined,
+      
+      // Additional fields for stock and processing
+      status: 'New',
+      sendSms: 0,
     };
 
     return await this.createOrder(userId, payload);
