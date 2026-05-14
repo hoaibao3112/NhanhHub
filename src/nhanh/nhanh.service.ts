@@ -117,13 +117,15 @@ export class NhanhService {
         `${NHANH_BASE_URL}/product/list`,
         { filters: {}, paginator: { size: 100, page } },
         {
-          params: { appId, businessId: token.businessId },
+          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
       return response.data;
     } catch (error: any) {
-      throw new InternalServerErrorException(`Lỗi lấy sản phẩm: ${error.message}`);
+      const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      this.logger.error(`Lỗi lấy sản phẩm: ${errorMsg}`);
+      throw new InternalServerErrorException(`Nhanh.vn API Error: ${errorMsg}`);
     }
   }
 
@@ -136,13 +138,15 @@ export class NhanhService {
         `${NHANH_BASE_URL}/order/index`,
         { filters: {}, paginator: { size: 100, page } },
         {
-          params: { appId, businessId: token.businessId },
+          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
       return response.data;
     } catch (error: any) {
-      throw new InternalServerErrorException(`Lỗi lấy đơn hàng: ${error.message}`);
+      const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      this.logger.error(`Lỗi lấy đơn hàng: ${errorMsg}`);
+      throw new InternalServerErrorException(`Nhanh.vn API Error: ${errorMsg}`);
     }
   }
 
@@ -155,13 +159,15 @@ export class NhanhService {
         `${NHANH_BASE_URL}/depot/list`,
         {},
         {
-          params: { appId, businessId: token.businessId },
+          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
       return response.data;
     } catch (error: any) {
-      throw new InternalServerErrorException(`Lỗi lấy danh sách kho: ${error.message}`);
+      const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      this.logger.error(`Lỗi lấy danh sách kho: ${errorMsg}`);
+      throw new InternalServerErrorException(`Nhanh.vn API Error: ${errorMsg}`);
     }
   }
 
