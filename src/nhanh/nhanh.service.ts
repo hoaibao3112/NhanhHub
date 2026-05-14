@@ -218,13 +218,7 @@ export class NhanhService {
       // Nhanh.vn v3.0 definitive structure
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/add`,
-        {
-          appId: String(appId),
-          businessId: String(token.businessId),
-          accessToken: token.accessToken,
-          shopOrderId: String(orderData.shopOrderId || ''),
-          data: JSON.stringify(orderData)
-        },
+        orderData,
         {
           params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 
@@ -276,53 +270,37 @@ export class NhanhService {
       throw new BadRequestException(`Không tính được phí ship: ${shipStatus.message || 'Lỗi không xác định'}`);
     }
 
-    // 3. Finalize Order - Nhanh v3.0 Required Structure
+    // 3. Finalize Order - Nhanh v3.0 hierarchical structure
     const payload = {
-      // Basic info
-      shopOrderId: `NHANH-${Date.now()}`,
-      depotId: depotId,
-      type: 1, // 1: Order, 2: Draft
-      description: 'Smart Checkout Order via NhanhHub',
-      
-      // Customer info
-      customerName: shippingTo.name,
-      customerMobile: shippingTo.mobile,
-      customerAddress: shippingTo.address || 'Địa chỉ khách hàng',
-      customerCityId: shippingTo.cityId,
-      customerDistrictId: shippingTo.districtId,
-      
-      // Delivery info
-      deliveryDate: new Date().toISOString().split('T')[0],
-      
-      // Product list - must be 'products' or 'productList' depending on strict v3
-      productList: products.map(p => ({ 
-        id: p.id, 
-        quantity: p.quantity, 
-        price: p.price 
-      })),
-      
-      // Legacy support for some versions
-      products: products.map(p => ({ 
-        id: p.id, 
-        quantity: p.quantity, 
-        price: p.price 
-      })),
-      
-      // Carrier / Shipping
-      carrierId: shipStatus.bestCarrierId,
-      customerShipFee: shipStatus.fee,
-      calcShipFee: 0,
-      
-      // Mandatory for v3 body
-      appId: undefined, 
-      businessId: undefined,
-      
-      // Additional fields for stock and processing
-      status: 'New',
-      sendSms: 0,
+      info: {
+        type: 1, // 1: Order
+        depotId: Number(depotId),
+        description: 'Đơn hàng từ NhanhHub Web',
+        status: 'New'
+      },
+      channel: {
+        appOrderId: `NHANH-${Date.now()}`
+      },
+      shippingAddress: {
+        name: shippingTo.name,
+        mobile: shippingTo.mobile,
+        cityId: Number(shippingTo.cityId),
+        address: shippingTo.address || 'Địa chỉ khách hàng',
+        locationVersion: 'v1'
+      },
+      carrier: {
+        sendCarrierType: 2, // Gửi qua hãng vận chuyển
+        id: Number(shipStatus.bestCarrierId || 2),
+        customerShipFee: Number(shipStatus.fee || 30000)
+      },
+      products: products.map(p => ({
+        id: p.id,
+        price: p.price,
+        quantity: p.quantity
+      }))
     };
 
-    this.logger.log(`[SmartCheckout] Final Payload: ${JSON.stringify(payload)}`);
+    this.logger.log(`[SmartCheckout] Sending V3.0 Order: ${JSON.stringify(payload)}`);
 
     return await this.createOrder(userId, payload);
   }
