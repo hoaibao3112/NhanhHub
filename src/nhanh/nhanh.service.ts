@@ -205,16 +205,18 @@ export class NhanhService {
     const appId = this.getRequiredEnv('NHANH_APP_ID');
 
     try {
-      // Nhanh.vn v3.0 requires appId, businessId, and accessToken in the body for POST requests
-      // Using strings for IDs as some versions of the API are sensitive to types
+      // Nhanh.vn v3.0 requires appId, businessId, and accessToken in the body at root level
+      // The actual order information is often expected inside a 'data' object
       const payload = {
-        ...orderData,
         appId: String(appId),
         businessId: String(token.businessId),
         accessToken: token.accessToken,
+        data: {
+          ...orderData,
+        }
       };
 
-      this.logger.log(`Tạo đơn hàng Nhanh.vn với payload: ${JSON.stringify(payload)}`);
+      this.logger.log(`Tạo đơn hàng Nhanh.vn với cấu trúc 'data': ${JSON.stringify(payload)}`);
 
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/add`,
