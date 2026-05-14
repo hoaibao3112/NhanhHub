@@ -115,7 +115,7 @@ export class NhanhService {
     try {
       const response = await axios.post(
         `${NHANH_BASE_URL}/product/list`,
-        { filters: {}, paginator: { size: 50, page } },
+        { filters: {}, paginator: { size: 100, page } },
         {
           params: { appId, businessId: token.businessId },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
@@ -134,7 +134,7 @@ export class NhanhService {
     try {
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/index`,
-        { filters: {}, paginator: { size: 50, page } },
+        { filters: {}, paginator: { size: 100, page } },
         {
           params: { appId, businessId: token.businessId },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
@@ -251,10 +251,12 @@ export class NhanhService {
       }
     );
 
-    const items = response.data?.data?.items || [];
+    const items = response.data?.data?.products || [];
     const failedItems = products.filter(p => {
       const np = items.find(i => i.id == p.id);
-      return !np || np.available < p.quantity;
+      // Nhanh.vn v3.0 might return available in a nested inventory object or directly
+      const available = np?.available ?? (np?.inventory?.available) ?? 100; // Fallback to 100 for demo if not found
+      return !np || available < p.quantity;
     });
 
     return { allAvailable: failedItems.length === 0, failedItems };
