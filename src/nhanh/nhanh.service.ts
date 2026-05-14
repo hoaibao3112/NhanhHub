@@ -274,7 +274,7 @@ export class NhanhService {
     // 2. Calculate Shipping
     const shipStatus = await this.calculateShippingFee(userId, { depotId, shippingTo, products });
     if (!shipStatus.success) {
-      throw new BadRequestException('Không tính được phí ship!');
+      throw new BadRequestException(`Không tính được phí ship: ${shipStatus.message || 'Lỗi không xác định'}`);
     }
 
     // 3. Finalize Order - Nhanh v3.0 Required Structure
@@ -409,9 +409,9 @@ export class NhanhService {
       
       return { success: true, fee: carriers[0].fee, bestCarrierId: carriers[0].id };
     } catch (e: any) {
-      this.logger.error(`Shipping calculation failed: ${e.response?.data ? JSON.stringify(e.response.data) : e.message}`);
-      // Trả về phí mặc định để không làm gián đoạn luồng checkout khi đang demo
-      return { success: true, fee: 35000, bestCarrierId: 2, carrierName: 'GHTK (Tự động)' };
+      const detail = e.response?.data ? JSON.stringify(e.response.data) : e.message;
+      this.logger.error(`Shipping calculation failed: ${detail}`);
+      return { success: false, message: detail };
     }
   }
 
