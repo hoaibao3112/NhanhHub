@@ -210,8 +210,8 @@
 
             <button id="btnConnect" class="btn btn-primary" style="display:none;">Kết nối tài khoản Nhanh.vn</button>
             
-            <!-- Link sang trang Smart Checkout -->
-            <button id="btnGoCheckout" class="btn btn-primary" style="display:none; background: linear-gradient(to right, #059669, #10b981); margin-top: 10px;">🛒 Thử nghiệm Smart Checkout</button>
+            <!-- Link sang trang Cửa hàng (Storefront) -->
+            <button id="btnGoShop" class="btn btn-primary" style="display:none; background: linear-gradient(to right, #6366f1, #8b5cf6); margin-top: 10px;">🛍️ Vào Cửa hàng (Storefront)</button>
 
             <button id="btnCopyLink" class="btn btn-link" style="color: #60a5fa; text-decoration: none;">📋 Sao chép địa chỉ App</button>
             
@@ -270,20 +270,20 @@
                 const data = await res.json();
                 const badge = document.getElementById('statusBadge');
                 const btnConnect = document.getElementById('btnConnect');
-                const btnGoCheckout = document.getElementById('btnGoCheckout');
+                const btnGoShop = document.getElementById('btnGoShop');
                 const btnDisconnect = document.getElementById('btnDisconnect');
 
                 if (data.linked) {
                     badge.innerText = '● Đã liên kết tài khoản Nhanh.vn';
                     badge.className = 'status-badge status-connected';
                     btnConnect.style.display = 'none';
-                    btnGoCheckout.style.display = 'block';
+                    btnGoShop.style.display = 'block';
                     btnDisconnect.style.display = 'block';
                 } else {
                     badge.innerText = '○ Chưa kết nối Nhanh.vn';
                     badge.className = 'status-badge status-disconnected';
                     btnConnect.style.display = 'block';
-                    btnGoCheckout.style.display = 'none';
+                    btnGoShop.style.display = 'none';
                     btnDisconnect.style.display = 'none';
                 }
             } catch (e) { console.error('Lỗi checkStatus:', e); }
@@ -296,8 +296,8 @@
 
         // --- XỬ LÝ SỰ KIỆN ---
         
-        document.getElementById('btnGoCheckout').onclick = () => {
-            location.href = '/checkout.html';
+        document.getElementById('btnGoShop').onclick = () => {
+            location.href = '/shop.html';
         };
 
         // Đăng ký

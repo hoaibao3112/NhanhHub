@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cửa hàng NhanhHub | Storefront</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0c83ff;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        /* Navbar */
+        .navbar {
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .logo { font-weight: 700; font-size: 1.5rem; background: linear-gradient(to right, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.2rem;
+            background: rgba(255,255,255,0.05);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cart-count { background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; }
+
+        /* Hero */
+        .hero {
+            padding: 60px 5%;
+            text-align: center;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+
+        /* Product Grid */
+        .container { padding: 40px 5%; }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.05);
+            overflow: hidden;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .product-card:hover { transform: translateY(-10px); border-color: var(--primary); }
+
+        .product-img {
+            width: 100%;
+            height: 250px;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+        }
+
+        .product-content { padding: 20px; }
+        .product-name { font-size: 1.1rem; font-weight: 600; margin: 0 0 10px; }
+        .product-price { color: var(--primary); font-weight: 700; font-size: 1.2rem; }
+        .product-stock { font-size: 0.8rem; color: var(--text-muted); margin-top: 5px; }
+
+        .btn-buy {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-buy:hover { filter: brightness(1.2); }
+
+        /* Sidebar Cart */
+        .sidebar {
+            position: fixed;
+            top: 0; right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: #1e293b;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+            z-index: 200;
+            transition: 0.4s;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.active { right: 0; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .close-cart { cursor: pointer; font-size: 1.5rem; }
+
+        .cart-items { flex: 1; overflow-y: auto; }
+        .cart-item { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; }
+        .cart-item-img { width: 50px; height: 50px; background: rgba(0,0,0,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .cart-item-info { flex: 1; }
+        .cart-item-info h4 { margin: 0; font-size: 0.9rem; }
+        .cart-item-info p { margin: 0; color: var(--primary); font-size: 0.85rem; }
+
+        .cart-footer { padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .total-row { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.2rem; margin-bottom: 20px; }
+
+        /* Form */
+        .checkout-form { margin-top: 20px; display: none; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; }
+
+        #successOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.9);
+            z-index: 300;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .loader {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">NhanhHub Store</div>
+        <div class="cart-icon" onclick="toggleCart()">
+            🛒 Giỏ hàng <span class="cart-count" id="cartCount">0</span>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <h1 style="font-size: 3rem; margin-bottom: 10px;">Mua sắm ngay hôm nay</h1>
+        <p style="color: var(--text-muted);">Sản phẩm được đồng bộ trực tiếp từ hệ thống Nhanh.vn</p>
+    </div>
+
+    <div class="container">
+        <div id="loader" class="loader"></div>
+        <div id="productGrid" class="product-grid">
+            <!-- Products will be loaded here -->
+        </div>
+    </div>
+
+    <!-- CART SIDEBAR -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Giỏ hàng của bạn</h3>
+            <span class="close-cart" onclick="toggleCart()">✕</span>
+        </div>
+        
+        <div id="cartItems" class="cart-items">
+            <!-- Cart items here -->
+        </div>
+
+        <div class="cart-footer">
+            <div class="total-row">
+                <span>Tổng cộng:</span>
+                <span id="cartTotal">0đ</span>
+            </div>
+
+            <button id="btnGoCheckout" class="btn-buy" style="background: var(--success);" onclick="showCheckoutForm()">TIẾN HÀNH THANH TOÁN</button>
+            
+            <div id="checkoutForm" class="checkout-form">
+                <div class="form-group">
+                    <label>Họ tên khách hàng</label>
+                    <input type="text" id="custName" value="Người Mua Demo">
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="text" id="custPhone" value="0987654321">
+                </div>
+                <div class="form-group">
+                    <label>Địa chỉ nhận hàng</label>
+                    <input type="text" id="address" value="Số 10, Đường Đồ Án, Hà Nội">
+                </div>
+                <div class="form-group">
+                    <label>Kho xuất hàng (Nhanh.vn)</label>
+                    <select id="depotId"></select>
+                </div>
+                <button id="btnConfirmBuy" class="btn-buy" onclick="doSmartCheckout()">XÁC NHẬN ĐẶT HÀNG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUCCESS OVERLAY -->
+    <div id="successOverlay">
+        <div style="background: var(--card-bg); padding: 40px; border-radius: 32px; max-width: 400px; border: 1px solid var(--success);">
+            <div style="font-size: 4rem; color: var(--success);">✓</div>
+            <h2 style="color: var(--success);">ĐẶT HÀNG THÀNH CÔNG!</h2>
+            <p>Đơn hàng đã được đẩy lên Nhanh.vn.</p>
+            <p id="orderInfo" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;"></p>
+            <button class="btn-buy" onclick="location.reload()">Tiếp tục mua sắm</button>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('access_token');
+        if (!token) location.href = '/';
+
+        let cart = [];
+
+        // 1. Tải sản phẩm từ Nhanh.vn
+        async function loadProducts() {
+            try {
+                const res = await fetch('/nhanh/products', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                document.getElementById('loader').style.display = 'none';
+
+                const grid = document.getElementById('productGrid');
+                if (data.data && data.data.items) {
+                    data.data.items.forEach(p => {
+                        const card = document.createElement('div');
+                        card.className = 'product-card';
+                        card.innerHTML = `
+                            <div class="product-img">📦</div>
+                            <div class="product-content">
+                                <h3 class="product-name">${p.name}</h3>
+                                <div class="product-price">${parseInt(p.price).toLocaleString()}đ</div>
+                                <div class="product-stock">Còn lại: ${p.available} sản phẩm</div>
+                                <button class="btn-buy" onclick='addToCart(${JSON.stringify(p)})'>THÊM VÀO GIỎ</button>
+                            </div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Lỗi khi tải sản phẩm từ Nhanh.vn');
+            }
+        }
+
+        // 2. Tải danh sách kho
+        async function loadDepots() {
+            const res = await fetch('/nhanh/depots', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const select = document.getElementById('depotId');
+            if (data.data) {
+                data.data.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.innerText = d.name;
+                    select.appendChild(opt);
+                });
+            }
+        }
+
+        function addToCart(product) {
+            cart.push(product);
+            updateCartUI();
+            toggleCart(true);
+        }
+
+        function updateCartUI() {
+            document.getElementById('cartCount').innerText = cart.length;
+            const container = document.getElementById('cartItems');
+            container.innerHTML = '';
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                total += parseInt(item.price);
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                    <div class="cart-item-img">📦</div>
+                    <div class="cart-item-info">
+                        <h4>${item.name}</h4>
+                        <p>${parseInt(item.price).toLocaleString()}đ</p>
+                    </div>
+                    <span onclick="removeFromCart(${index})" style="cursor:pointer">✕</span>
+                `;
+                container.appendChild(div);
+            });
+            document.getElementById('cartTotal').innerText = total.toLocaleString() + 'đ';
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        function toggleCart(show = null) {
+            const sidebar = document.getElementById('sidebar');
+            if (show === true) sidebar.classList.add('active');
+            else if (show === false) sidebar.classList.remove('active');
+            else sidebar.classList.toggle('active');
+        }
+
+        function showCheckoutForm() {
+            if (cart.length === 0) return alert('Giỏ hàng trống!');
+            document.getElementById('btnGoCheckout').style.display = 'none';
+            document.getElementById('checkoutForm').style.display = 'block';
+        }
+
+        async function doSmartCheckout() {
+            const btn = document.getElementById('btnConfirmBuy');
+            btn.innerText = '⏳ Đang xử lý...';
+            btn.disabled = true;
+
+            const checkoutData = {
+                depotId: document.getElementById('depotId').value,
+                shippingTo: {
+                    name: document.getElementById('custName').value,
+                    mobile: document.getElementById('custPhone').value,
+                    cityId: 254, // Hà Nội mặc định
+                    address: document.getElementById('address').value
+                },
+                products: cart.map(p => ({
+                    id: p.id,
+                    price: p.price,
+                    quantity: 1
+                }))
+            };
+
+            try {
+                const res = await fetch('/nhanh/smart-checkout', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(checkoutData)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    document.getElementById('successOverlay').style.display = 'flex';
+                    document.getElementById('orderInfo').innerText = `Mã đơn hàng Nhanh.vn: ${result.data?.orderId || 'Thành công'}`;
+                } else {
+                    alert('Lỗi: ' + result.message);
+                }
+            } catch (e) {
+                alert('Lỗi kết nối server!');
+            } finally {
+                btn.innerText = 'XÁC NHẬN ĐẶT HÀNG';
+                btn.disabled = false;
+            }
+        }
+
+        loadProducts();
+        loadDepots();
+    </script>
+</body>
+</html>
