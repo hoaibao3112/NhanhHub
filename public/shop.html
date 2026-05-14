@@ -423,29 +423,31 @@
                     const card = document.createElement('div');
                     card.className = 'product-card';
                     
-                    // Emoji theo category hoặc tên
+                    const imgUrl = p.image || p.thumbnail || p.imagePath || '';
                     let emoji = '📦';
                     const name = p.name.toLowerCase();
-                    if (name.includes('áo')) emoji = '👕';
-                    else if (name.includes('hoodie')) emoji = '🧥';
+                    if (name.includes('hoodie')) emoji = '🧥';
+                    else if (name.includes('áo')) emoji = '👕';
                     else if (name.includes('giày')) emoji = '👟';
                     else if (name.includes('quần')) emoji = '👖';
 
-                    // Lấy tồn kho (fallback nếu không có)
                     const stock = p.available ?? p.inventory?.available ?? 100;
+                    const priceRaw = p.price ? p.price.toString().replace(/\./g, '') : '0';
+                    const price = parseInt(priceRaw).toLocaleString();
 
                     card.innerHTML = `
                         <div class="product-img-container">
-                            <div class="product-img">${emoji}</div>
+                            ${imgUrl ? `<img src="${imgUrl}" class="product-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''}
+                            <div class="product-img" style="${imgUrl ? 'display:none' : 'display:flex'}">${emoji}</div>
                         </div>
                         <div class="product-content">
                             <h3 class="product-name" title="${p.name}">${p.name}</h3>
-                            <span class="product-price">${parseInt(p.price).toLocaleString()}đ</span>
+                            <span class="product-price">${price}đ</span>
                             <div class="product-stock">
                                 <span class="stock-dot"></span>
                                 Còn lại ${stock} sản phẩm
                             </div>
-                            <button class="btn-buy" onclick='addToCart(${JSON.stringify(p)})'>THÊM VÀO GIỎ</button>
+                            <button class="btn-buy" onclick='addToCart(${JSON.stringify(p).replace(/'/g, "&apos;")})'>THÊM VÀO GIỎ</button>
                         </div>
                     `;
                     grid.appendChild(card);
