@@ -366,9 +366,13 @@
                     <label>Địa chỉ giao hàng</label>
                     <input type="text" id="address" value="23 Chiến Thắng, Hà Đông, Hà Nội">
                 </div>
-                <div class="form-group" style="display: flex; align-items: center; gap: 10px; background: rgba(12, 131, 255, 0.1); padding: 12px; border-radius: 12px; border: 1px solid var(--primary);">
-                    <input type="checkbox" id="isMock" style="width: 20px; height: 20px; cursor: pointer;">
-                    <label for="isMock" style="margin-bottom: 0; cursor: pointer; color: var(--primary); font-weight: 700;">CHẾ ĐỘ DEMO (BỎ QUA LỖI KHO)</label>
+                <div class="form-group">
+                    <label>Kho hàng xuất</label>
+                    <select id="depotId"></select>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px; background: rgba(12, 131, 255, 0.05); padding: 12px; border-radius: 12px; border: 1px dashed var(--primary); margin-top: 15px;">
+                    <input type="checkbox" id="isMock" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="isMock" style="margin-bottom: 0; cursor: pointer; color: var(--primary); font-size: 0.8rem; font-weight: 700;">CHẾ ĐỘ DEMO (GỬI ĐƠN GIẢ LẬP)</label>
                 </div>
                 <button id="btnConfirmBuy" class="btn-buy" onclick="doSmartCheckout()">HOÀN TẤT ĐẶT HÀNG</button>
             </div>
