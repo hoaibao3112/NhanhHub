@@ -34,8 +34,6 @@ export class NhanhService {
 
   /**
    * Builds the Nhanh.vn OAuth authorisation URL.
-   * We pass the userId in the 'returnLink' query param or via state if supported.
-   * For simplicity with Nhanh v3, we'll append it to the returnLink.
    */
   buildConnectUrl(userId: string): string {
     const appId = this.getRequiredEnv('NHANH_APP_ID');
@@ -45,54 +43,39 @@ export class NhanhService {
     url.searchParams.set('version', '3.0');
     url.searchParams.set('appId', appId);
     url.searchParams.set('returnLink', redirectUrl);
-    
-    // Gửi userId qua tham số state thay vì đính kèm vào URL
     url.searchParams.set('state', userId);
 
     return url.toString();
   }
 
   /**
-   * Exchanges an `accessCode` for an `accessToken` and saves it to Supabase for the specific user.
+   * Exchanges an `accessCode` for an `accessToken` and saves it to Supabase.
    */
   async exchangeAccessCode(accessCode: string, userId: string): Promise<NhanhTokenData> {
     const appIdStr = this.getRequiredEnv('NHANH_APP_ID');
     const appId = Number(appIdStr);
     const secretKey = this.getRequiredEnv('NHANH_SECRET_KEY').trim();
 
-    this.logger.log(`Exchanging accessCode: ${accessCode.substring(0, 5)}... for appId: ${appId}`);
-
     try {
-      this.logger.log(`Exchanging accessCode at pos.open.nhanh.vn v3.0 (Strict Types)...`);
-      
       const payload = { 
-        appId: appId, // Gửi dưới dạng Number (rất quan trọng)
+        appId: appId,
         secretKey: secretKey, 
         accessCode: accessCode 
       };
 
-      const response = await axios.post<{
-        code: number;
-        messages?: any;
-        data?: { accessToken: string; businessId?: string | number };
-      }>(
+      const response = await axios.post(
         `https://pos.open.nhanh.vn/v3.0/app/getaccesstoken`,
         payload, 
         {
-          params: { appId }, // Query String chỉ cần appId là đủ
-          headers: { 
-            'Content-Type': 'application/json',
-            'User-Agent': 'NhanhHub-App'
-          },
+          params: { appId },
+          headers: { 'Content-Type': 'application/json' },
         },
       );
 
       const { code, messages, data } = response.data;
 
       if (code !== 1 || !data?.accessToken) {
-        this.logger.error(`Nhanh.vn error response: ${JSON.stringify(response.data)}`);
-        const errorMsg = messages ? (typeof messages === 'string' ? messages : JSON.stringify(messages)) : 'Unknown error from Nhanh.vn';
-        throw new InternalServerErrorException(`Nhanh.vn API error: ${errorMsg}`);
+        throw new InternalServerErrorException(`Nhanh.vn API error: ${JSON.stringify(messages)}`);
       }
 
       const tokenData: NhanhTokenData = {
@@ -103,49 +86,30 @@ export class NhanhService {
 
       await this.saveTokenToDb(userId, tokenData);
       return tokenData;
-    } catch (error: unknown) {
-      this.logger.error(`Failed to exchange accessCode: ${error}`);
-      throw new InternalServerErrorException(`Failed to exchange accessCode: ${error}`);
+    } catch (error: any) {
+      this.logger.error(`Failed to exchange accessCode: ${error.message}`);
+      throw new InternalServerErrorException(`Failed to exchange accessCode: ${error.message}`);
     }
   }
 
-  /**
-   * Returns the current link status from Supabase.
-   */
   async getStatus(userId: string): Promise<{ linked: boolean; linkedAt?: string; businessId?: string | number }> {
     const token = await this.loadTokenFromDb(userId);
     if (!token) return { linked: false };
-
-    return {
-      linked: true,
-      linkedAt: token.linkedAt,
-      businessId: token.businessId,
-    };
+    return { linked: true, linkedAt: token.linkedAt, businessId: token.businessId };
   }
 
-  /**
-   * Deletes the token from Supabase.
-   */
   async disconnect(userId: string): Promise<{ success: boolean; message: string }> {
     const { error } = await this.supabaseService.getClient()
       .from('nhanh_tokens')
       .delete()
       .eq('user_id', userId);
 
-    if (error) {
-      throw new InternalServerErrorException(`Failed to unlink: ${error.message}`);
-    }
-
+    if (error) throw new InternalServerErrorException(`Failed to unlink: ${error.message}`);
     return { success: true, message: 'Account successfully unlinked.' };
   }
 
-  /**
-   * Fetches products using the user's specific token.
-   */
   async getProducts(userId: string, page = 1): Promise<any> {
-    const token = await this.loadTokenFromDb(userId);
-    if (!token) throw new BadRequestException('Vui lòng kết nối tài khoản Nhanh.vn trước!');
-
+    const token = await this.getValidToken(userId);
     const appId = this.getRequiredEnv('NHANH_APP_ID');
 
     try {
@@ -158,18 +122,13 @@ export class NhanhService {
         },
       );
       return response.data;
-    } catch (error: unknown) {
-      throw new InternalServerErrorException(`Lỗi lấy sản phẩm: ${error}`);
+    } catch (error: any) {
+      throw new InternalServerErrorException(`Lỗi lấy sản phẩm: ${error.message}`);
     }
   }
 
-  /**
-   * Fetches orders using the user's specific token.
-   */
   async getOrders(userId: string, page = 1): Promise<any> {
-    const token = await this.loadTokenFromDb(userId);
-    if (!token) throw new BadRequestException('Vui lòng kết nối tài khoản Nhanh.vn trước!');
-
+    const token = await this.getValidToken(userId);
     const appId = this.getRequiredEnv('NHANH_APP_ID');
 
     try {
@@ -182,18 +141,13 @@ export class NhanhService {
         },
       );
       return response.data;
-    } catch (error: unknown) {
-      throw new InternalServerErrorException(`Lỗi lấy danh sách đơn hàng: ${error}`);
+    } catch (error: any) {
+      throw new InternalServerErrorException(`Lỗi lấy đơn hàng: ${error.message}`);
     }
   }
 
-  /**
-   * Fetches warehouses (depots) from Nhanh.vn.
-   */
   async getDepots(userId: string): Promise<any> {
-    const token = await this.loadTokenFromDb(userId);
-    if (!token) throw new BadRequestException('Vui lòng kết nối tài khoản Nhanh.vn trước!');
-
+    const token = await this.getValidToken(userId);
     const appId = this.getRequiredEnv('NHANH_APP_ID');
 
     try {
@@ -206,18 +160,13 @@ export class NhanhService {
         },
       );
       return response.data;
-    } catch (error: unknown) {
-      throw new InternalServerErrorException(`Lỗi lấy danh sách kho: ${error}`);
+    } catch (error: any) {
+      throw new InternalServerErrorException(`Lỗi lấy danh sách kho: ${error.message}`);
     }
   }
 
-  /**
-   * Creates a new order on Nhanh.vn.
-   */
   async createOrder(userId: string, orderData: any): Promise<any> {
-    const token = await this.loadTokenFromDb(userId);
-    if (!token) throw new BadRequestException('Vui lòng kết nối tài khoản Nhanh.vn trước!');
-
+    const token = await this.getValidToken(userId);
     const appId = this.getRequiredEnv('NHANH_APP_ID');
 
     try {
@@ -231,122 +180,89 @@ export class NhanhService {
       );
 
       if (response.data.code !== 1) {
-        this.logger.error(`Error creating order: ${JSON.stringify(response.data)}`);
-        throw new InternalServerErrorException(`Nhanh.vn error: ${JSON.stringify(response.data.messages)}`);
+        throw new BadRequestException(`Nhanh.vn error: ${JSON.stringify(response.data.messages)}`);
       }
-
       return response.data;
-    } catch (error: unknown) {
-      if (error instanceof InternalServerErrorException) throw error;
-      throw new InternalServerErrorException(`Lỗi tạo đơn hàng: ${error}`);
+    } catch (error: any) {
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(`Lỗi tạo đơn hàng: ${error.message}`);
     }
   }
 
   /**
-   * LUỒNG SMART CHECKOUT (Nhanh.vn Integration)
+   * SMART CHECKOUT: Check kho -> Tính ship -> Tạo đơn
    */
   async smartCheckout(userId: string, checkoutData: any): Promise<any> {
     const { products, shippingTo, depotId } = checkoutData;
 
-    // 1. Kiểm tra tồn kho thực tế qua Nhanh API
-    this.logger.log(`Step 1: Verifying inventory via Nhanh.vn API...`);
-    const inventoryResult = await this.checkInventory(userId, products);
-    if (!inventoryResult.allAvailable) {
-      throw new BadRequestException({
-        message: 'Không đủ tồn kho trên Nhanh.vn!',
-        details: inventoryResult.failedItems
-      });
+    // 1. Check Inventory
+    const invStatus = await this.checkInventory(userId, products);
+    if (!invStatus.allAvailable) {
+      throw new BadRequestException({ message: 'Hết hàng!', details: invStatus.failedItems });
     }
 
-    // 2. Tính phí ship thực tế từ Nhanh API
-    this.logger.log(`Step 2: Calculating shipping fee via Nhanh.vn API...`);
-    const shippingResult = await this.calculateShippingFee(userId, {
-      depotId,
-      shippingTo,
-      products
-    });
-
-    if (!shippingResult.success) {
-      throw new BadRequestException('Không thể tính phí vận chuyển từ Nhanh.vn!');
+    // 2. Calculate Shipping
+    const shipStatus = await this.calculateShippingFee(userId, { depotId, shippingTo, products });
+    if (!shipStatus.success) {
+      throw new BadRequestException('Không tính được phí ship!');
     }
 
-    // 3. Tạo đơn hàng với thông tin đã tối ưu
-    this.logger.log(`Step 3: Creating final order on Nhanh.vn...`);
-    const finalOrderPayload = {
-      info: {
-        depotId: depotId,
-        type: 1, // Đơn hàng bình thường
-        description: 'Đơn hàng từ NhanhHub Smart Checkout',
-      },
+    // 3. Finalize Order
+    const payload = {
+      info: { depotId, type: 1, description: 'Smart Checkout Order' },
       shippingAddress: shippingTo,
-      products: products.map(p => ({
-        id: p.id,
-        quantity: p.quantity,
-        price: p.price
-      })),
-      carrier: {
-        id: shippingResult.bestCarrierId,
-        customerShipFee: shippingResult.fee,
-      }
+      products: products.map(p => ({ id: p.id, quantity: p.quantity, price: p.price })),
+      carrier: { id: shipStatus.bestCarrierId, customerShipFee: shipStatus.fee }
     };
 
-    return await this.createOrder(userId, finalOrderPayload);
+    return await this.createOrder(userId, payload);
   }
 
-  /**
-   * Helper: Check inventory on Nhanh.vn
-   */
-  private async checkInventory(userId: string, products: any[]): Promise<any> {
+  // ---------------------------------------------------------------------------
+  // Private Helpers
+  // ---------------------------------------------------------------------------
+
+  private async getValidToken(userId: string): Promise<NhanhTokenData> {
     const token = await this.loadTokenFromDb(userId);
+    if (!token) throw new BadRequestException('Vui lòng kết nối tài khoản Nhanh.vn!');
+    return token;
+  }
+
+  private async checkInventory(userId: string, products: any[]): Promise<any> {
+    const token = await this.getValidToken(userId);
     const appId = this.getRequiredEnv('NHANH_APP_ID');
 
-    // Lấy chi tiết sản phẩm từ Nhanh để check available
-    const productIds = products.map(p => p.id);
     const response = await axios.post(
       `${NHANH_BASE_URL}/product/list`,
-      { filters: { ids: productIds } },
+      { filters: { ids: products.map(p => p.id) } },
       {
         params: { appId, businessId: token.businessId },
         headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
       }
     );
 
-    const nhanhProducts = response.data?.data?.items || [];
-    const failedItems = [];
+    const items = response.data?.data?.items || [];
+    const failedItems = products.filter(p => {
+      const np = items.find(i => i.id == p.id);
+      return !np || np.available < p.quantity;
+    });
 
-    for (const item of products) {
-      const nhanhProd = nhanhProducts.find(p => p.id === item.id);
-      if (!nhanhProd || (nhanhProd.available < item.quantity)) {
-        failedItems.push({
-          id: item.id,
-          requested: item.quantity,
-          available: nhanhProd ? nhanhProd.available : 0
-        });
-      }
-    }
-
-    return {
-      allAvailable: failedItems.length === 0,
-      failedItems
-    };
+    return { allAvailable: failedItems.length === 0, failedItems };
   }
 
-  /**
-   * Helper: Calculate shipping fee via Nhanh.vn
-   */
   private async calculateShippingFee(userId: string, data: any): Promise<any> {
-    const token = await this.loadTokenFromDb(userId);
+    const token = await this.getValidToken(userId);
     const appId = this.getRequiredEnv('NHANH_APP_ID');
 
     try {
       const response = await axios.post(
         `${NHANH_BASE_URL}/shipping/fee`,
         {
-          type: 1, // Sử dụng kết nối có sẵn của Nhanh.vn
+          type: 1,
           depotId: data.depotId,
           shippingTo: data.shippingTo,
           price: data.products.reduce((acc, p) => acc + (p.price * p.quantity), 0),
-          shippingWeight: 500, // Mặc định 500g nếu không có dữ liệu
+          shippingWeight: 500,
         },
         {
           params: { appId, businessId: token.businessId },
@@ -354,57 +270,27 @@ export class NhanhService {
         }
       );
 
-      // Nhanh.vn trả về danh sách các hãng, ta chọn hãng đầu tiên (thường là rẻ nhất hoặc tối ưu)
       const carriers = response.data?.data || [];
       if (carriers.length === 0) return { success: false };
-
-      const bestCarrier = carriers[0];
-      return {
-        success: true,
-        fee: bestCarrier.fee,
-        bestCarrierId: bestCarrier.id,
-        carrierName: bestCarrier.name
-      };
-    } catch (e) {
-      this.logger.error(`Shipping calculation failed: ${e.message}`);
+      return { success: true, fee: carriers[0].fee, bestCarrierId: carriers[0].id };
+    } catch {
       return { success: false };
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Database Helpers
-  // ---------------------------------------------------------------------------
-
   private async loadTokenFromDb(userId: string): Promise<NhanhTokenData | null> {
     const { data, error } = await this.supabaseService.getClient()
-      .from('nhanh_tokens')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
+      .from('nhanh_tokens').select('*').eq('user_id', userId).single();
     if (error || !data) return null;
-
-    return {
-      accessToken: data.access_token,
-      businessId: data.business_id,
-      linkedAt: data.linked_at,
-    };
+    return { accessToken: data.access_token, businessId: data.business_id, linkedAt: data.linked_at };
   }
 
   private async saveTokenToDb(userId: string, data: NhanhTokenData): Promise<void> {
     const { error } = await this.supabaseService.getClient()
-      .from('nhanh_tokens')
-      .upsert({
-        user_id: userId,
-        access_token: data.accessToken,
-        business_id: data.businessId,
-        linked_at: data.linkedAt,
+      .from('nhanh_tokens').upsert({
+        user_id: userId, access_token: data.accessToken, business_id: data.businessId, linked_at: data.linkedAt,
       });
-
-    if (error) {
-      this.logger.error(`Error saving token to Supabase: ${error.message}`);
-      throw new InternalServerErrorException('Không thể lưu token vào Database.');
-    }
+    if (error) throw new InternalServerErrorException('Database error.');
   }
 
   private getRequiredEnv(key: string): string {
