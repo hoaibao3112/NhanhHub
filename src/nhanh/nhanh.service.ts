@@ -351,12 +351,13 @@ export class NhanhService {
 
       if (!data) return null;
 
-      const accessToken = data.accessToken || data.access_token;
-      const businessId = data.businessId || data.business_id;
-      const linkedAt = data.linkedAt || data.linked_at;
+      // Handle both cases but prioritize snake_case which we now know is correct
+      const accessToken = data.access_token || data.accessToken;
+      const businessId = data.business_id || data.businessId;
+      const linkedAt = data.linked_at || data.linkedAt;
 
       if (!accessToken) {
-        throw new Error('Found record in nhanh_tokens but accessToken is missing! Check column names in Supabase.');
+        throw new Error('Found record in nhanh_tokens but access_token column is missing or empty!');
       }
 
       return { accessToken, businessId, linkedAt };
@@ -370,9 +371,9 @@ export class NhanhService {
     const { error } = await this.supabaseService.getClient()
       .from('nhanh_tokens').upsert({
         user_id: userId, 
-        accessToken: data.accessToken, 
-        businessId: data.businessId, 
-        linkedAt: data.linkedAt,
+        access_token: data.accessToken, 
+        business_id: data.businessId, 
+        linked_at: data.linkedAt,
       });
     
     if (error) {
