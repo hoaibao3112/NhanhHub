@@ -146,6 +146,9 @@ export class NhanhService {
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
+      if (response.data.code !== 1) {
+        throw new Error(`Nhanh.vn Error: ${JSON.stringify(response.data.messages) || response.data.errorCode}`);
+      }
       return response.data;
     } catch (error: any) {
       const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
@@ -168,6 +171,9 @@ export class NhanhService {
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
+      if (response.data.code !== 1) {
+        throw new Error(`Nhanh.vn Error: ${JSON.stringify(response.data.messages) || response.data.errorCode}`);
+      }
       return response.data;
     } catch (error: any) {
       const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;

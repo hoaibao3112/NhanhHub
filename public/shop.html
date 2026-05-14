@@ -411,11 +411,15 @@
                 }
                 
                 if (products.length === 0) {
-                    grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1">
-                        <span class="empty-state-icon">🛍️</span>
-                        <h3>Chưa có sản phẩm nào</h3>
-                        <p>Hãy tạo sản phẩm trên hệ thống Nhanh.vn của bạn.</p>
-                    </div>`;
+                    const isTokenError = data.code === 0;
+                    grid.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1">
+                            <span class="empty-state-icon">${isTokenError ? '🔑' : '🛍️'}</span>
+                            <h3>${isTokenError ? 'Hết hạn kết nối' : 'Chưa có sản phẩm nào'}</h3>
+                            <p>${isTokenError ? 'Kết nối với Nhanh.vn đã hết hạn hoặc không hợp lệ. Vui lòng kết nối lại để tiếp tục.' : 'Hãy tạo sản phẩm trên hệ thống Nhanh.vn của bạn để bắt đầu bán hàng.'}</p>
+                            ${isTokenError ? '<a href="/" class="btn-buy" style="display:inline-block; margin-top:20px; text-decoration:none">KẾT NỐI LẠI NGAY</a>' : ''}
+                        </div>
+                    `;
                     return;
                 }
 
