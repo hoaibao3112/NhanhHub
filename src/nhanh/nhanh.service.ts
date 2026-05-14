@@ -337,14 +337,33 @@ export class NhanhService {
   }
 
   private async loadTokenFromDb(userId: string): Promise<NhanhTokenData | null> {
-    const { data, error } = await this.supabaseService.getClient()
-      .from('nhanh_tokens').select('*').eq('user_id', userId).single();
-    if (error || !data) return null;
-    return { 
-      accessToken: data.accessToken || data.access_token, 
-      businessId: data.businessId || data.business_id, 
-      linkedAt: data.linkedAt || data.linked_at 
-    };
+    try {
+      const { data, error } = await this.supabaseService.getClient()
+        .from('nhanh_tokens')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') return null; // No rows found
+        throw new Error(`Supabase error: ${error.message} (Code: ${error.code})`);
+      }
+
+      if (!data) return null;
+
+      const accessToken = data.accessToken || data.access_token;
+      const businessId = data.businessId || data.business_id;
+      const linkedAt = data.linkedAt || data.linked_at;
+
+      if (!accessToken) {
+        throw new Error('Found record in nhanh_tokens but accessToken is missing! Check column names in Supabase.');
+      }
+
+      return { accessToken, businessId, linkedAt };
+    } catch (e) {
+      this.logger.error(`loadTokenFromDb failed: ${e.message}`);
+      throw e;
+    }
   }
 
   private async saveTokenToDb(userId: string, data: NhanhTokenData): Promise<void> {
