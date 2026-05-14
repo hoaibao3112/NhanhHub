@@ -214,6 +214,12 @@ export class NhanhService {
       params.append('appId', String(appId));
       params.append('businessId', String(token.businessId));
       params.append('accessToken', token.accessToken);
+      
+      // Đưa shopOrderId ra ngoài cùng nếu có
+      if (orderData.shopOrderId) {
+        params.append('shopOrderId', String(orderData.shopOrderId));
+      }
+      
       params.append('data', JSON.stringify(orderData));
 
       const response = await axios.post(
