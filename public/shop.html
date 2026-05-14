@@ -376,8 +376,10 @@
     </div>
 
     <script>
-        const token = localStorage.getItem('access_token');
-        if (!token) location.href = '/';
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/index.html';
+        }
 
         let cart = [];
 
@@ -436,14 +438,15 @@
                         imgUrl = host + imgUrl;
                     }
 
-                    // Nếu nằm trong mảng images
                     if (!imgUrl && p.images && p.images.length > 0) {
                         const firstImg = p.images[0];
                         imgUrl = typeof firstImg === 'string' ? firstImg : (firstImg.link || firstImg.path);
-                        if (imgUrl && !imgUrl.startsWith('http')) {
-                            const host = p.imageHost || 'https://p0.nhanh.vn';
-                            imgUrl = host + imgUrl;
-                        }
+                    }
+
+                    // Sau khi tìm được imgUrl (từ bất kỳ nguồn nào), kiểm tra lại host nếu cần
+                    if (imgUrl && !imgUrl.startsWith('http')) {
+                        const host = p.imageHost || 'https://p0.nhanh.vn';
+                        imgUrl = host + imgUrl;
                     }
 
                     let emoji = '📦';
