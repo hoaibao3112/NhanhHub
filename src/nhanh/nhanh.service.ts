@@ -186,6 +186,7 @@ export class NhanhService {
           appId: String(appId),
           businessId: String(token.businessId),
           accessToken: token.accessToken,
+          filters: {}
         },
         {
           params: { appId: Number(appId), businessId: Number(token.businessId) },
@@ -195,6 +196,7 @@ export class NhanhService {
           },
         },
       );
+      this.logger.log(`Danh sách kho từ Nhanh.vn: ${JSON.stringify(response.data.data)}`);
       if (response.data.code !== 1) {
         throw new Error(`Nhanh.vn Error: ${JSON.stringify(response.data.messages) || response.data.errorCode}`);
       }
