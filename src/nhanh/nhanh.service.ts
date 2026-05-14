@@ -116,14 +116,13 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/product/list`,
         { 
-          appId: Number(appId),
-          businessId: Number(token.businessId),
+          appId: String(appId),
+          businessId: String(token.businessId),
           accessToken: token.accessToken,
           filters: {}, 
           paginator: { size: 100, page } 
         },
         {
-          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
@@ -147,14 +146,13 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/index`,
         { 
-          appId: Number(appId),
-          businessId: Number(token.businessId),
+          appId: String(appId),
+          businessId: String(token.businessId),
           accessToken: token.accessToken,
           filters: {}, 
           paginator: { size: 100, page } 
         },
         {
-          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
@@ -178,13 +176,12 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/business/depot`,
         { 
-          appId: Number(appId),
-          businessId: Number(token.businessId),
+          appId: String(appId),
+          businessId: String(token.businessId),
           accessToken: token.accessToken,
           filters: {} 
         },
         {
-          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
@@ -206,30 +203,33 @@ export class NhanhService {
 
     try {
       // Nhanh.vn v3.0 requires appId, businessId, and accessToken in the body for POST requests
+      // Using strings for IDs as some versions of the API are sensitive to types
       const payload = {
         ...orderData,
-        appId: Number(appId),
-        businessId: Number(token.businessId),
+        appId: String(appId),
+        businessId: String(token.businessId),
         accessToken: token.accessToken,
       };
+
+      this.logger.log(`Tạo đơn hàng Nhanh.vn với payload: ${JSON.stringify(payload)}`);
 
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/add`,
         payload,
         {
-          // We also keep them in params for backward compatibility if some endpoints still use them
-          params: { appId, businessId: token.businessId },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
 
       if (response.data.code !== 1) {
+        this.logger.error(`Nhanh.vn API Error: ${JSON.stringify(response.data.messages)}`);
         throw new BadRequestException(`Nhanh.vn error: ${JSON.stringify(response.data.messages)}`);
       }
       return response.data;
     } catch (error: any) {
       if (error instanceof BadRequestException) throw error;
       const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      this.logger.error(`Lỗi tạo đơn hàng: ${errorMsg}`);
       throw new InternalServerErrorException(`Lỗi tạo đơn hàng: ${errorMsg}`);
     }
   }
@@ -324,13 +324,12 @@ export class NhanhService {
     const response = await axios.post(
       `${NHANH_BASE_URL}/product/list`,
       { 
-        appId: Number(appId),
-        businessId: Number(token.businessId),
+        appId: String(appId),
+        businessId: String(token.businessId),
         accessToken: token.accessToken,
         filters: { ids: products.map(p => p.id) } 
       },
       {
-        params: { appId, businessId: token.businessId },
         headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
       }
     );
