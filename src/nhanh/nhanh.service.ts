@@ -207,10 +207,10 @@ export class NhanhService {
     try {
       // Nhanh.vn v3.0 requires appId, businessId, and accessToken in the body for POST requests
       const payload = {
+        ...orderData,
         appId: Number(appId),
         businessId: Number(token.businessId),
         accessToken: token.accessToken,
-        ...orderData,
       };
 
       const response = await axios.post(
@@ -262,25 +262,46 @@ export class NhanhService {
       throw new BadRequestException('Không tính được phí ship!');
     }
 
-    // 3. Finalize Order - Nhanh v3.0 Flattened Structure
+    // 3. Finalize Order - Nhanh v3.0 Required Structure
     const payload = {
+      // Basic info
       shopOrderId: `NHANH-${Date.now()}`,
       depotId: depotId,
       type: 1, // 1: Order, 2: Draft
+      description: 'Smart Checkout Order via NhanhHub',
+      
+      // Customer info
       customerName: shippingTo.name,
       customerMobile: shippingTo.mobile,
       customerAddress: shippingTo.address || 'Địa chỉ khách hàng',
       customerCityId: shippingTo.cityId,
       customerDistrictId: shippingTo.districtId,
+      
+      // Delivery info
+      deliveryDate: new Date().toISOString().split('T')[0],
+      
+      // Product list - must be 'products' or 'productList' depending on strict v3
       productList: products.map(p => ({ 
         id: p.id, 
         quantity: p.quantity, 
         price: p.price 
       })),
+      
+      // Legacy support for some versions
+      products: products.map(p => ({ 
+        id: p.id, 
+        quantity: p.quantity, 
+        price: p.price 
+      })),
+      
+      // Carrier / Shipping
       carrierId: shipStatus.bestCarrierId,
       customerShipFee: shipStatus.fee,
-      description: 'Smart Checkout Order via NhanhHub',
-      calcShipFee: 0, // We already calculated it
+      calcShipFee: 0,
+      
+      // Mandatory for v3 body
+      appId: undefined, // Will be set in createOrder
+      businessId: undefined, // Will be set in createOrder
     };
 
     return await this.createOrder(userId, payload);
