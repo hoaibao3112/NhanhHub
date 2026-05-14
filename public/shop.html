@@ -427,10 +427,23 @@
                     const card = document.createElement('div');
                     card.className = 'product-card';
                     
-                    // Thử mọi trường ảnh có thể có
+                    // Thử mọi cách để lấy link ảnh thật
                     let imgUrl = p.image || p.thumbnail || p.imagePath || '';
+                    
+                    // Nếu là đường dẫn tương đối, ghép với imageHost
+                    if (imgUrl && !imgUrl.startsWith('http')) {
+                        const host = p.imageHost || 'https://p0.nhanh.vn';
+                        imgUrl = host + imgUrl;
+                    }
+
+                    // Nếu nằm trong mảng images
                     if (!imgUrl && p.images && p.images.length > 0) {
-                        imgUrl = typeof p.images[0] === 'string' ? p.images[0] : p.images[0].link;
+                        const firstImg = p.images[0];
+                        imgUrl = typeof firstImg === 'string' ? firstImg : (firstImg.link || firstImg.path);
+                        if (imgUrl && !imgUrl.startsWith('http')) {
+                            const host = p.imageHost || 'https://p0.nhanh.vn';
+                            imgUrl = host + imgUrl;
+                        }
                     }
 
                     let emoji = '📦';
