@@ -123,6 +123,7 @@ export class NhanhService {
           paginator: { size: 100, page } 
         },
         {
+          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
@@ -153,6 +154,7 @@ export class NhanhService {
           paginator: { size: 100, page } 
         },
         {
+          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
@@ -182,6 +184,7 @@ export class NhanhService {
           filters: {} 
         },
         {
+          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
@@ -217,6 +220,7 @@ export class NhanhService {
         `${NHANH_BASE_URL}/order/add`,
         payload,
         {
+          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         },
       );
@@ -330,6 +334,7 @@ export class NhanhService {
         filters: { ids: products.map(p => p.id) } 
       },
       {
+        params: { appId: Number(appId), businessId: Number(token.businessId) },
         headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
       }
     );
