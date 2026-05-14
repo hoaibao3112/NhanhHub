@@ -171,4 +171,13 @@ export class NhanhController {
   async smartCheckout(@Request() req, @Body() checkoutData: any) {
     return await this.nhanhService.smartCheckout(req.user.userId, checkoutData);
   }
+
+  /**
+   * Tạo nhanh sản phẩm mẫu lên Nhanh.vn để demo đồ án
+   */
+  @Post('create-demo-products')
+  @UseGuards(JwtAuthGuard)
+  async createDemoProducts(@Request() req) {
+    return await this.nhanhService.createDemoProducts(req.user.userId);
+  }
 }

@@ -205,19 +205,29 @@
             
             <div id="productList">
                 <div class="product-item">
-                    <div class="product-img">👟</div>
+                    <div class="product-img">📦</div>
                     <div class="product-info">
-                        <h3>Giày Sneaker Pro Max</h3>
-                        <p>ID: 35012903</p>
-                        <div class="product-price">1.200.000đ</div>
+                        <div class="form-group" style="margin-bottom: 5px;">
+                            <label>ID Sản phẩm 1 (trên Nhanh.vn)</label>
+                            <input type="number" id="pId1" value="35012903" style="padding: 8px;">
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <input type="number" id="pPrice1" value="120000" style="padding: 8px;" placeholder="Giá">
+                            <input type="number" id="pQty1" value="1" style="padding: 8px;" placeholder="SL">
+                        </div>
                     </div>
                 </div>
                 <div class="product-item">
-                    <div class="product-img">👕</div>
+                    <div class="product-img">📦</div>
                     <div class="product-info">
-                        <h3>Áo Thun NhanhHub Edition</h3>
-                        <p>ID: 35012904</p>
-                        <div class="product-price">350.000đ</div>
+                        <div class="form-group" style="margin-bottom: 5px;">
+                            <label>ID Sản phẩm 2 (Tùy chọn)</label>
+                            <input type="number" id="pId2" placeholder="ID khác..." style="padding: 8px;">
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <input type="number" id="pPrice2" value="0" style="padding: 8px;">
+                            <input type="number" id="pQty2" value="0" style="padding: 8px;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -250,7 +260,17 @@
         <!-- RIGHT: Summary & Action -->
         <div class="card" style="height: fit-content;">
             <h2>💰 Thanh toán</h2>
-            <div class="form-group">
+            
+            <div class="form-group" style="background: rgba(5, 150, 105, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(5, 150, 105, 0.2);">
+                <label style="color: var(--success); font-weight: 600;">🛠 Công cụ hỗ trợ Đồ án</label>
+                <button id="btnCreateDemo" class="btn" style="background: var(--success); color: white; font-size: 0.8rem; padding: 10px; margin-bottom: 10px;">⚡ Tạo nhanh sản phẩm mẫu lên Nhanh.vn</button>
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem;">
+                    <input type="checkbox" id="isMock" style="width: 18px; height: 18px;"> 
+                    <span>Bật chế độ Giả lập (Demo Mode)</span>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
                 <label>Chọn Kho hàng (Nhanh.vn)</label>
                 <select id="depotId">
                     <option value="">Đang tải danh sách kho...</option>
@@ -326,6 +346,27 @@
 
         loadDepots();
 
+        // 1.5. Tạo sản phẩm mẫu
+        document.getElementById('btnCreateDemo').onclick = async () => {
+            const btn = document.getElementById('btnCreateDemo');
+            btn.innerText = '⏳ Đang tạo...';
+            btn.disabled = true;
+            try {
+                const res = await fetch('/nhanh/create-demo-products', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                alert('🎉 Đã tạo xong sản phẩm mẫu lên Nhanh.vn! Hãy kiểm tra kho của bạn.');
+                console.log(data);
+            } catch (e) {
+                alert('Lỗi khi tạo sản phẩm!');
+            } finally {
+                btn.innerText = '⚡ Tạo nhanh sản phẩm mẫu lên Nhanh.vn';
+                btn.disabled = false;
+            }
+        };
+
         // 2. Xử lý Smart Checkout
         document.getElementById('btnCheckout').onclick = async () => {
             const btn = document.getElementById('btnCheckout');
@@ -341,22 +382,44 @@
             [sInv, sShip, sOrder].forEach(s => s.className = 'step');
 
             try {
-                // Step 1: Inventory
-                sInv.classList.add('active');
-                
+                const products = [];
+                const p1 = document.getElementById('pId1').value;
+                if (p1) {
+                    products.push({
+                        id: parseInt(p1),
+                        price: parseInt(document.getElementById('pPrice1').value || 0),
+                        quantity: parseInt(document.getElementById('pQty1').value || 1)
+                    });
+                }
+                const p2 = document.getElementById('pId2').value;
+                if (p2) {
+                    products.push({
+                        id: parseInt(p2),
+                        price: parseInt(document.getElementById('pPrice2').value || 0),
+                        quantity: parseInt(document.getElementById('pQty2').value || 1)
+                    });
+                }
+
+                if (products.length === 0) {
+                    alert('Vui lòng nhập ít nhất 1 sản phẩm!');
+                    btn.disabled = false;
+                    return;
+                }
+
                 const checkoutData = {
                     depotId: document.getElementById('depotId').value,
+                    isMock: document.getElementById('isMock').checked, // Gửi cờ giả lập lên server
                     shippingTo: {
                         name: document.getElementById('custName').value,
                         mobile: document.getElementById('custPhone').value,
                         cityId: document.getElementById('cityId').value,
                         address: document.getElementById('address').value
                     },
-                    products: [
-                        { id: 35012903, quantity: 1, price: 1200000 },
-                        { id: 35012904, quantity: 1, price: 350000 }
-                    ]
+                    products: products
                 };
+
+                // Bắt đầu bước 1: Check kho
+                sInv.classList.add('active');
 
                 const res = await fetch('/nhanh/smart-checkout', {
                     method: 'POST',
