@@ -109,10 +109,10 @@ export class NhanhService {
   }
 
   async getProducts(userId: string, page = 1): Promise<any> {
-    const token = await this.getValidToken(userId);
-    const appId = this.getRequiredEnv('NHANH_APP_ID');
-
     try {
+      const token = await this.getValidToken(userId);
+      const appId = this.getRequiredEnv('NHANH_APP_ID');
+
       const response = await axios.post(
         `${NHANH_BASE_URL}/product/list`,
         { filters: {}, paginator: { size: 100, page } },
@@ -125,15 +125,16 @@ export class NhanhService {
     } catch (error: any) {
       const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
       this.logger.error(`Lỗi lấy sản phẩm: ${errorMsg}`);
-      throw new InternalServerErrorException(`Nhanh.vn API Error: ${errorMsg}`);
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(`NhanhHub Error: ${errorMsg}`);
     }
   }
 
   async getOrders(userId: string, page = 1): Promise<any> {
-    const token = await this.getValidToken(userId);
-    const appId = this.getRequiredEnv('NHANH_APP_ID');
-
     try {
+      const token = await this.getValidToken(userId);
+      const appId = this.getRequiredEnv('NHANH_APP_ID');
+
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/index`,
         { filters: {}, paginator: { size: 100, page } },
@@ -146,15 +147,16 @@ export class NhanhService {
     } catch (error: any) {
       const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
       this.logger.error(`Lỗi lấy đơn hàng: ${errorMsg}`);
-      throw new InternalServerErrorException(`Nhanh.vn API Error: ${errorMsg}`);
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(`NhanhHub Error: ${errorMsg}`);
     }
   }
 
   async getDepots(userId: string): Promise<any> {
-    const token = await this.getValidToken(userId);
-    const appId = this.getRequiredEnv('NHANH_APP_ID');
-
     try {
+      const token = await this.getValidToken(userId);
+      const appId = this.getRequiredEnv('NHANH_APP_ID');
+
       const response = await axios.post(
         `${NHANH_BASE_URL}/depot/list`,
         {},
@@ -167,7 +169,8 @@ export class NhanhService {
     } catch (error: any) {
       const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
       this.logger.error(`Lỗi lấy danh sách kho: ${errorMsg}`);
-      throw new InternalServerErrorException(`Nhanh.vn API Error: ${errorMsg}`);
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(`NhanhHub Error: ${errorMsg}`);
     }
   }
 
@@ -321,7 +324,7 @@ export class NhanhService {
           `${NHANH_BASE_URL}/product/add`,
           p,
           {
-            params: { appId, businessId: token.businessId },
+            params: { appId: Number(appId), businessId: Number(token.businessId) },
             headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
           }
         );
@@ -337,13 +340,20 @@ export class NhanhService {
     const { data, error } = await this.supabaseService.getClient()
       .from('nhanh_tokens').select('*').eq('user_id', userId).single();
     if (error || !data) return null;
-    return { accessToken: data.access_token, businessId: data.business_id, linkedAt: data.linked_at };
+    return { 
+      accessToken: data.accessToken || data.access_token, 
+      businessId: data.businessId || data.business_id, 
+      linkedAt: data.linkedAt || data.linked_at 
+    };
   }
 
   private async saveTokenToDb(userId: string, data: NhanhTokenData): Promise<void> {
     const { error } = await this.supabaseService.getClient()
       .from('nhanh_tokens').upsert({
-        user_id: userId, access_token: data.accessToken, business_id: data.businessId, linked_at: data.linkedAt,
+        user_id: userId, 
+        accessToken: data.accessToken, 
+        businessId: data.businessId, 
+        linkedAt: data.linkedAt,
       });
     if (error) throw new InternalServerErrorException('Database error.');
   }
