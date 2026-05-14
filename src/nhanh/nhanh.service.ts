@@ -289,9 +289,8 @@ export class NhanhService {
         locationVersion: 'v1'
       },
       carrier: {
-        sendCarrierType: 2, // Gửi qua hãng vận chuyển
-        id: Number(shipStatus.bestCarrierId || 2),
-        customerShipFee: Number(shipStatus.fee || 30000)
+        sendCarrierType: 1, // 1: Cửa hàng tự giao (Bỏ qua bắt lỗi hãng vận chuyển)
+        customerShipFee: Number(shipStatus.fee || 0)
       },
       products: products.map(p => ({
         id: p.id,
