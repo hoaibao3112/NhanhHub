@@ -112,21 +112,18 @@ export class NhanhService {
       const token = await this.getValidToken(userId);
       const appId = this.getRequiredEnv('NHANH_APP_ID');
 
+      const params = new URLSearchParams();
+      params.append('appId', String(appId));
+      params.append('businessId', String(token.businessId));
+      params.append('accessToken', token.accessToken);
+      params.append('filters', JSON.stringify({}));
+      params.append('paginator', JSON.stringify({ size: 100, page }));
+
       const response = await axios.post(
         `${NHANH_BASE_URL}/product/list`,
-        { 
-          appId: String(appId),
-          businessId: String(token.businessId),
-          accessToken: token.accessToken,
-          filters: {}, 
-          paginator: { size: 100, page } 
-        },
+        params,
         {
-          params: { appId: Number(appId), businessId: Number(token.businessId) },
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': token.accessToken 
-          },
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         },
       );
       if (response.data.code !== 1) {
@@ -180,23 +177,18 @@ export class NhanhService {
       const token = await this.getValidToken(userId);
       const appId = this.getRequiredEnv('NHANH_APP_ID');
 
+      const params = new URLSearchParams();
+      params.append('version', '3.0');
+      params.append('appId', String(appId));
+      params.append('businessId', String(token.businessId));
+      params.append('accessToken', token.accessToken);
+      params.append('filters', JSON.stringify({ status: 'active' }));
+
       const response = await axios.post(
         `${NHANH_BASE_URL}/business/depot`,
+        params,
         {
-          version: '3.0',
-          appId: String(appId),
-          businessId: String(token.businessId),
-          accessToken: token.accessToken,
-          filters: {
-            status: 'active'
-          }
-        },
-        {
-          params: { appId: Number(appId), businessId: Number(token.businessId) },
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': token.accessToken 
-          },
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         },
       );
       this.logger.log(`Danh sách kho từ Nhanh.vn: ${JSON.stringify(response.data.data)}`);
@@ -218,19 +210,18 @@ export class NhanhService {
 
     try {
       // Nhanh.vn v3.0 definitive structure
+      const params = new URLSearchParams();
+      params.append('appId', String(appId));
+      params.append('businessId', String(token.businessId));
+      params.append('accessToken', token.accessToken);
+      params.append('data', JSON.stringify(orderData));
+
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/add`,
+        params,
         {
-          appId: String(appId),
-          businessId: String(token.businessId),
-          accessToken: token.accessToken,
-          data: JSON.stringify(orderData)
-        },
-        {
-          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': token.accessToken 
+            'Content-Type': 'application/x-www-form-urlencoded'
           },
         },
       );
