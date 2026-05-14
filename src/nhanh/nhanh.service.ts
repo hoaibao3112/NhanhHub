@@ -374,7 +374,11 @@ export class NhanhService {
         businessId: data.businessId, 
         linkedAt: data.linkedAt,
       });
-    if (error) throw new InternalServerErrorException('Database error.');
+    
+    if (error) {
+      this.logger.error(`Database save failed: ${error.message} (Code: ${error.code})`);
+      throw new InternalServerErrorException(`Database error: ${error.message}`);
+    }
   }
 
   private getRequiredEnv(key: string): string {
