@@ -188,9 +188,15 @@ export class NhanhService {
     const appId = this.getRequiredEnv('NHANH_APP_ID');
 
     try {
+      const payload = {
+        ...orderData,
+        appId: Number(appId),
+        businessId: Number(token.businessId),
+      };
+
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/add`,
-        orderData,
+        payload,
         {
           params: { appId, businessId: token.businessId },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
@@ -237,7 +243,12 @@ export class NhanhService {
 
     // 3. Finalize Order
     const payload = {
-      info: { depotId, type: 1, description: 'Smart Checkout Order' },
+      info: {
+        depotId,
+        type: 1,
+        description: 'Smart Checkout Order',
+        shopOrderId: `NHANH-${Date.now()}`,
+      },
       shippingAddress: shippingTo,
       products: products.map(p => ({ id: p.id, quantity: p.quantity, price: p.price })),
       carrier: { id: shipStatus.bestCarrierId, customerShipFee: shipStatus.fee }
