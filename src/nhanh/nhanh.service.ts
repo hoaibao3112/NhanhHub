@@ -183,10 +183,13 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/business/depot`,
         {
+          version: '3.0',
           appId: String(appId),
           businessId: String(token.businessId),
           accessToken: token.accessToken,
-          filters: {}
+          filters: {
+            status: 'active'
+          }
         },
         {
           params: { appId: Number(appId), businessId: Number(token.businessId) },
