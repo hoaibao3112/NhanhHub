@@ -58,7 +58,6 @@ export class NhanhService {
 
     try {
       const payload = { 
-        appId: appId,
         secretKey: secretKey, 
         accessCode: accessCode 
       };
@@ -116,10 +115,6 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/product/list`,
         { 
-          version: '3.0',
-          appId: String(appId),
-          businessId: String(token.businessId),
-          accessToken: token.accessToken,
           filters: {}, 
           paginator: { size: 100, page } 
         },
@@ -127,7 +122,7 @@ export class NhanhService {
           params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 
             'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${token.accessToken}` 
+            'Authorization': token.accessToken 
           },
         },
       );
@@ -151,10 +146,6 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/index`,
         { 
-          version: '3.0',
-          appId: String(appId),
-          businessId: String(token.businessId),
-          accessToken: token.accessToken,
           filters: {}, 
           paginator: { size: 100, page } 
         },
@@ -162,7 +153,7 @@ export class NhanhService {
           params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 
             'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${token.accessToken}` 
+            'Authorization': token.accessToken 
           },
         },
       );
@@ -185,18 +176,12 @@ export class NhanhService {
 
       const response = await axios.post(
         `${NHANH_BASE_URL}/business/depot`,
-        { 
-          version: '3.0',
-          appId: String(appId),
-          businessId: String(token.businessId),
-          accessToken: token.accessToken,
-          filters: {} 
-        },
+        {},
         {
           params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 
             'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${token.accessToken}` 
+            'Authorization': token.accessToken 
           },
         },
       );
@@ -218,26 +203,16 @@ export class NhanhService {
 
     try {
       // Nhanh.vn v3.0 definitive structure
-      const payload = {
-        version: '3.0',
-        appId: String(appId),
-        businessId: String(token.businessId),
-        accessToken: token.accessToken,
-        data: JSON.stringify({
-          ...orderData,
-        })
-      };
-
-      this.logger.log(`Tạo đơn hàng Nhanh.vn (v3.0) với payload: ${JSON.stringify(payload)}`);
-
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/add`,
-        payload,
+        {
+          data: JSON.stringify(orderData)
+        },
         {
           params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 
             'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${token.accessToken}` 
+            'Authorization': token.accessToken 
           },
         },
       );
@@ -345,9 +320,6 @@ export class NhanhService {
     const response = await axios.post(
       `${NHANH_BASE_URL}/product/list`,
       { 
-        appId: String(appId),
-        businessId: String(token.businessId),
-        accessToken: token.accessToken,
         filters: { ids: products.map(p => p.id) } 
       },
       {
@@ -385,9 +357,6 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/shipping/fee`,
         {
-          appId: Number(appId),
-          businessId: Number(token.businessId),
-          accessToken: token.accessToken,
           type: 1,
           depotId: data.depotId,
           customerCityId: data.shippingTo.cityId,
@@ -396,7 +365,7 @@ export class NhanhService {
           shippingWeight: data.shippingWeight || 500,
         },
         {
-          params: { appId, businessId: token.businessId },
+          params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
         }
       );
@@ -432,12 +401,7 @@ export class NhanhService {
       try {
         const response = await axios.post(
           `${NHANH_BASE_URL}/product/add`,
-          {
-            appId: Number(appId),
-            businessId: Number(token.businessId),
-            accessToken: token.accessToken,
-            ...p
-          },
+          p,
           {
             params: { appId: Number(appId), businessId: Number(token.businessId) },
             headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
