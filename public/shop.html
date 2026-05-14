@@ -434,20 +434,25 @@
                 grid.innerHTML = '';
 
                 // Dò tìm mảng sản phẩm một cách thông minh
-                let products = [];
+                let rawItems = [];
                 if (data.data) {
-                    if (Array.isArray(data.data.products)) products = data.data.products;
-                    else if (Array.isArray(data.data.items)) products = data.data.items;
-                    else if (Array.isArray(data.data)) products = data.data;
-                    else if (typeof data.data === 'object') {
-                        // Ưu tiên lấy key làm ID nếu value không có ID
-                        products = Object.entries(data.data).map(([key, val]) => {
-                            if (typeof val !== 'object') return null;
-                            return { ...val, id: val.id || key };
-                        }).filter(p => p !== null);
-                    }
+                    if (Array.isArray(data.data.products)) rawItems = data.data.products;
+                    else if (Array.isArray(data.data.items)) rawItems = data.data.items;
+                    else if (Array.isArray(data.data)) rawItems = data.data;
+                    else if (typeof data.data === 'object') rawItems = Object.values(data.data);
                 }
-                console.log('Danh sách sản phẩm tải về:', products);
+
+                // Xử lý từng sản phẩm để lấy ĐÚNG ID từ Nhanh.vn
+                let products = rawItems.map(item => {
+                    if (!item || typeof item !== 'object') return null;
+                    // Nhanh v3.0 thường trả về 'id'. Nếu không có, thử các trường phổ biến khác.
+                    const realId = item.id || item.idNhanh || item.productId || item.code;
+                    return { ...item, id: realId };
+                }).filter(p => p !== null && p.id);
+
+                console.log('--- DANH SÁCH ID SẢN PHẨM THẬT TỪ NHANH.VN ---');
+                products.forEach(p => console.log(`Sản phẩm: ${p.name} | ID: ${p.id}`));
+                console.log('-------------------------------------------');
                 
                 if (products.length === 0) {
                     const isTokenError = data.code === 0;
