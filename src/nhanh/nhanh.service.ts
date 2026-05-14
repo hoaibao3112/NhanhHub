@@ -115,6 +115,9 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/product/list`,
         { 
+          appId: String(appId),
+          businessId: String(token.businessId),
+          accessToken: token.accessToken,
           filters: {}, 
           paginator: { size: 100, page } 
         },
@@ -146,6 +149,9 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/index`,
         { 
+          appId: String(appId),
+          businessId: String(token.businessId),
+          accessToken: token.accessToken,
           filters: {}, 
           paginator: { size: 100, page } 
         },
@@ -176,7 +182,11 @@ export class NhanhService {
 
       const response = await axios.post(
         `${NHANH_BASE_URL}/business/depot`,
-        {},
+        {
+          appId: String(appId),
+          businessId: String(token.businessId),
+          accessToken: token.accessToken,
+        },
         {
           params: { appId: Number(appId), businessId: Number(token.businessId) },
           headers: { 
@@ -206,6 +216,9 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/order/add`,
         {
+          appId: String(appId),
+          businessId: String(token.businessId),
+          accessToken: token.accessToken,
           data: JSON.stringify(orderData)
         },
         {
@@ -320,6 +333,9 @@ export class NhanhService {
     const response = await axios.post(
       `${NHANH_BASE_URL}/product/list`,
       { 
+        appId: String(appId),
+        businessId: String(token.businessId),
+        accessToken: token.accessToken,
         filters: { ids: products.map(p => p.id) } 
       },
       {
@@ -357,6 +373,9 @@ export class NhanhService {
       const response = await axios.post(
         `${NHANH_BASE_URL}/shipping/fee`,
         {
+          appId: String(appId),
+          businessId: String(token.businessId),
+          accessToken: token.accessToken,
           type: 1,
           depotId: data.depotId,
           customerCityId: data.shippingTo.cityId,
@@ -401,7 +420,12 @@ export class NhanhService {
       try {
         const response = await axios.post(
           `${NHANH_BASE_URL}/product/add`,
-          p,
+          {
+            appId: String(appId),
+            businessId: String(token.businessId),
+            accessToken: token.accessToken,
+            ...p
+          },
           {
             params: { appId: Number(appId), businessId: Number(token.businessId) },
             headers: { 'Content-Type': 'application/json', Authorization: token.accessToken },
