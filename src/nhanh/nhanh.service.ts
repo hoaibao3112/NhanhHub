@@ -269,7 +269,17 @@ export class NhanhService {
       }
     );
 
-    const items = response.data?.data?.products || [];
+    let items: any[] = [];
+    const data = response.data?.data;
+    if (Array.isArray(data)) items = data;
+    else if (Array.isArray(data?.products)) items = data.products;
+    else if (Array.isArray(data?.items)) items = data.items;
+    else if (data && typeof data === 'object') {
+      items = Object.values(data).filter((item): item is { id: string | number } => {
+        if (!item || typeof item !== 'object') return false;
+        return 'id' in item && (typeof item.id === 'string' || typeof item.id === 'number');
+      });
+    }
     const failedItems = products.filter(p => {
       const np = items.find(i => i.id == p.id);
       // Nhanh.vn v3.0 might return available in a nested inventory object or directly
