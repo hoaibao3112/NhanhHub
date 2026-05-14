@@ -440,10 +440,14 @@
                     else if (Array.isArray(data.data.items)) products = data.data.items;
                     else if (Array.isArray(data.data)) products = data.data;
                     else if (typeof data.data === 'object') {
-                        // Trường hợp Nhanh.vn trả về object với key là ID (v2.0 cũ)
-                        products = Object.values(data.data).filter(item => typeof item === 'object' && item.id);
+                        // Ưu tiên lấy key làm ID nếu value không có ID
+                        products = Object.entries(data.data).map(([key, val]) => {
+                            if (typeof val !== 'object') return null;
+                            return { ...val, id: val.id || key };
+                        }).filter(p => p !== null);
                     }
                 }
+                console.log('Danh sách sản phẩm tải về:', products);
                 
                 if (products.length === 0) {
                     const isTokenError = data.code === 0;
@@ -567,6 +571,7 @@
         }
 
         function addToCart(product) {
+            console.log('Sản phẩm được thêm vào giỏ:', product);
             cart.push(product);
             updateCartUI();
             toggleCart(true);
