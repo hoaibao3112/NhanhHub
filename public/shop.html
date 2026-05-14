@@ -376,7 +376,19 @@
     </div>
 
     <script>
-        const token = localStorage.getItem('token');
+        // Đồng nhất sử dụng 'access_token' giống index.html
+        let token = localStorage.getItem('access_token');
+        
+        // Nếu vừa kết nối xong có token trên URL, hãy lưu lại
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
+        if (urlToken) {
+            localStorage.setItem('access_token', urlToken);
+            token = urlToken;
+            // Xóa token trên URL cho đẹp
+            window.history.replaceState({}, document.title, "/shop.html");
+        }
+
         if (!token) {
             window.location.href = '/index.html';
         }
